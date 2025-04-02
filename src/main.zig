@@ -20,7 +20,7 @@ pub fn main() !void {
         .subtract = false,
         .zero = false,
     };
-    const cpu: CPU.CPU = CPU.CPU.init(registers, flags, memory);
-    _ = cpu;
+    var cpu: CPU.CPU = CPU.CPU.init(registers, flags, memory);
+    _ = cpu.execute(0);
     std.debug.print("Compiled ok!", .{});
 }

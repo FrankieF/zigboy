@@ -17,10 +17,10 @@ pub const Memory = struct {
     pub fn read_byte(self: *Memory, address: u16) u8 {
         switch (address) {
             0xC000...0xDFFF => { // work ram 8 kb
-                return self.work_ram[@as(u8, address - 0xC000)];
+                return self.work_ram[address - 0xC000];
             },
+            else => std.debug.print("Memory address[{d}] is not implemented yet.", .{address}),
         }
-        std.debug.print("Memory address[{d}] is not implemented yet.", .{address});
         return 0;
     }
 
@@ -31,15 +31,15 @@ pub const Memory = struct {
     pub fn write_byte(self: *Memory, address: u16, value: u8) void {
         switch (address) {
             0xC000...0xDFFF => { // work ram 8 kb
-                self.work_ram[@as(u8, address - 0xC000)] = value;
+                self.work_ram[address - 0xC000] = value;
             },
+            else => std.debug.print("Memory address[{d}] is not implemented yet.", .{address}),
         }
-        std.debug.print("Memory address[{d}] is not implemented yet.", .{address});
     }
 
     pub fn write_word(self: *Memory, address: u16, value: u16) void {
-        self.write_byte(address, @as(u8, value & 0xFF));
-        self.write_byte(address, @as(u8, value >> 8));
+        self.write_byte(address, @truncate(value & 0xFF));
+        self.write_byte(address, @truncate(value >> 8));
     }
 };
 

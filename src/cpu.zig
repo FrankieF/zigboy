@@ -9,12 +9,13 @@ pub const Registers = struct {
     l: u8,
 
     pub fn get_bc(self: *Registers) u16 {
-        return (@as(u16, self.b) << 8) | self.c;
+        const _u16: u16 = @as(u16, self.b) << 8 | self.c;
+        return _u16;
     }
 
     pub fn set_bc(self: *Registers, value: u16) void {
-        self.b = @as(u8, (value & 0xFF00) >> 8);
-        self.c = @as(u8, (value & 0xFF));
+        self.b = @truncate(value & 0xFF00 >> 8);
+        self.c = @truncate(value & 0xFF);
     }
 
     pub fn get_hl(self: *Registers) u16 {
@@ -22,8 +23,8 @@ pub const Registers = struct {
     }
 
     pub fn set_hl(self: *Registers, value: u16) void {
-        self.h = @as(u8, (value & 0xFF00) >> 8);
-        self.l = @as(u8, (value & 0xFF));
+        self.h = @truncate(value & 0xFF00 >> 8);
+        self.l = @truncate(value & 0xFF);
     }
 
     pub fn get_de(self: *Registers) u16 {
@@ -31,8 +32,8 @@ pub const Registers = struct {
     }
 
     pub fn set_de(self: *Registers, value: u16) void {
-        self.d = @as(u8, (value & 0xFF00) >> 8);
-        self.e = @as(u8, (value & 0xFF));
+        self.d = @truncate(value & 0xFF00 >> 8);
+        self.e = @truncate(value & 0xFF);
     }
 };
 
@@ -74,9 +75,15 @@ pub const CPU = struct {
     }
 
     pub fn next_byte(self: *CPU) u8 {
-        const byte = self.memory.read_next_byte(self.pc);
+        const byte = self.memory.read_byte(self.pc);
         self.pc += 1;
         return byte;
+    }
+
+    pub fn next_word(self: *CPU) u16 {
+        const word = self.memory.read_word(self.pc);
+        self.pc += 2;
+        return word;
     }
 
     pub fn nop() void {}
@@ -136,7 +143,7 @@ pub const CPU = struct {
     }
 
     fn inc(self: *CPU, value: u8) u8 {
-        const result = @addWithOverflow(value, 1);
+        const result = @addWithOverflow(value, 1)[0];
         const zero_flag = result == 0;
         const half_carry_flag = (value & 0xF) + 1 > 0xF;
         self.flags.set(zero_flag, false, half_carry_flag, self.flags.carry);
@@ -144,7 +151,7 @@ pub const CPU = struct {
     }
 
     fn dec(self: *CPU, value: u8) u8 {
-        const result = @subWithOverflow(value, 1);
+        const result = @subWithOverflow(value, 1)[0];
         const zero_flag = result == 0;
         const half_carry_flag = (value & 0xF) == 0;
         self.flags.set(zero_flag, true, half_carry_flag, self.flags.carry);
@@ -153,8 +160,8 @@ pub const CPU = struct {
 
     fn add16(self: *CPU, value: u16) void {
         const hl = self.registers.get_hl();
-        const result = @addWithOverflow(hl, value);
-        self.a = result;
+        const result = @addWithOverflow(hl, value)[0];
+        self.registers.set_hl(result);
         const half_carry_flag = (hl & 0xFFF) + (value & 0xFFF) > 0xFFF; // carry at 11 bit
         const carry_flag = hl > 0xFFF - value; // carry at 15 bit
         self.flags.set(false, false, half_carry_flag, carry_flag);
@@ -162,10 +169,10 @@ pub const CPU = struct {
 
     fn addSP(self: *CPU, value: u8) void {
         const sp = self.registers.sp;
-        const x = @as(u16, value);
-        self.sp = @addWithOverflow(sp, x);
-        const half_carry_flag = (sp & 0xF) + (x & 0xF) > (value & 0xF);
-        const carry_flag = (sp & 0xFF) + (x & 0xFF) > (value & 0xFF);
+        const value16 = @as(u16, value);
+        self.sp = @addWithOverflow(sp, value16)[0];
+        const half_carry_flag = (sp & 0xF) + (value16 & 0xF) > (value & 0xF);
+        const carry_flag = (sp & 0xFF) + (value16 & 0xFF) > (value & 0xFF);
         self.flags.set(false, true, half_carry_flag, carry_flag);
     }
 
@@ -178,22 +185,21 @@ pub const CPU = struct {
         var offset: u8 = 0;
         var should_carry = false;
         const a = self.registers.a;
-        const flags = self.flags;
-        if ((flags.subtract and a & 0xF > 0x09) || flags.half_carry) {
+        const flags = &self.flags;
+        if ((flags.subtract and a & 0xF > 0x09) or flags.half_carry) {
             offset |= 0x06;
         }
-        if ((flags.subtract and a > 0x99) || self.flags.carry) {
+        if ((flags.subtract and a > 0x99) or self.flags.carry) {
             offset |= 0x60;
             should_carry = true;
         }
-        flags.set(a == 0, flags.subtract, false);
-        return .{ if (flags.subtract) @subWithOverflow(a, offset) else @addWithOverflow(a, offset), should_carry };
-        // set value into a after returning, set zero flag true if a is zero, reset half carry, set carry to carry
+        flags.set(a == 0, flags.subtract, false, should_carry);
+        return .{ if (flags.subtract) @subWithOverflow(a, offset)[0] else @addWithOverflow(a, offset)[0], should_carry };
     }
 
     pub fn rlca(self: *CPU, value: u8) u8 {
         const carry = (value & 0x80) >> 7 == 1;
-        const result = (value << 1) | @as(u8, carry);
+        const result = (value << 1) | @intFromBool(carry);
         self.flags.set(result == 0, false, false, carry);
         return result;
     }
@@ -202,11 +208,12 @@ pub const CPU = struct {
         const carry: u8 = value & 0x80;
         const rotated = (value << 1) | carry;
         self.flags.set(rotated == 0, false, false, carry != 0);
+        return rotated;
     }
 
     pub fn rrca(self: *CPU, value: u8) u8 {
         const carry = value & 1 == 1;
-        const result = (value >> 1) | @as(u8, carry);
+        const result = (value >> 1) | @intFromBool(carry);
         self.flags.set(result == 0, false, false, carry);
         return value;
     }
@@ -215,11 +222,12 @@ pub const CPU = struct {
         const carry: u8 = value & 1;
         const rotated = (value >> 1) | carry;
         self.flags.set(rotated == 0, false, false, carry != 0);
+        return rotated;
     }
 
     pub fn jr(self: *CPU, value: u8) void {
-        const signed = @as(i16, value);
-        self.pc = @as(i16, self.pc) + signed;
+        const value16 = @as(u16, value);
+        self.pc += value16;
     }
 
     const std = @import("std");
@@ -228,9 +236,18 @@ pub const CPU = struct {
             0x00 => { // NOP
                 return 4;
             },
+            0x01 => { // LD BC, n16
+                const word = self.next_word();
+                self.registers.set_bc(word);
+                return 12;
+            },
+            0x02 => { // LD [BC], A
+                self.memory.write_byte(self.registers.get_bc(), self.registers.a);
+                return 8;
+            },
             0x03 => { // INC BC
                 const bc = self.registers.get_bc();
-                self.registers.set_bc(@addWithOverflow(bc, 1));
+                self.registers.set_bc(@addWithOverflow(bc, 1)[0]);
                 return 8;
             },
             0x04 => { // INC B
@@ -251,8 +268,8 @@ pub const CPU = struct {
                 return 4;
             },
             0x08 => { // LD [a16], SP
-                const word = self.memory.read_word();
-                self.memory.write_word(word, self.registers.sp);
+                const word = self.next_word();
+                self.memory.write_word(word, self.sp);
                 return 20;
             },
             0x09 => { // ADD HL, BC
@@ -260,12 +277,12 @@ pub const CPU = struct {
                 return 8;
             },
             0x0A => { // LD A, [BC]
-                self.a = self.memory.read_byte(self.registers.get_bc());
+                self.registers.a = self.memory.read_byte(self.registers.get_bc());
                 return 8;
             },
             0x0B => { // DEC BC
                 const bc = self.registers.get_bc();
-                self.registers.set_bc(@subWithOverflow(bc, 1));
+                self.registers.set_bc(@subWithOverflow(bc, 1)[0]);
                 return 8;
             },
             0x0C => { // INC C
@@ -281,7 +298,7 @@ pub const CPU = struct {
                 return 8;
             },
             0x0F => { // RRCA
-                self.registers.a = self.rrca(self.a);
+                self.registers.a = self.rrca(self.registers.a);
                 self.flags.zero = false;
                 return 4;
             },
@@ -289,16 +306,16 @@ pub const CPU = struct {
                 return 4;
             },
             0x11 => { // LD DE, n16
-                const word = self.memory.read_word();
+                const word = self.next_word();
                 self.registers.set_de(word);
                 return 12;
             },
-            0x12 => { // LD DE, A
+            0x12 => { // LD [DE], A
                 self.memory.write_byte(self.registers.get_de(), self.registers.a);
                 return 8;
             },
             0x13 => { // INC DE
-                self.registers.set_de(@addWithOverflow(self.registers.get_de(), 1));
+                self.registers.set_de(@addWithOverflow(self.registers.get_de(), 1)[0]);
                 return 8;
             },
             0x14 => { // INC D
@@ -318,7 +335,7 @@ pub const CPU = struct {
                 return 8;
             },
             0x18 => { // JR e8
-                jr(self.next_byte());
+                self.jr(self.next_byte());
                 return 12;
             },
             0x19 => { // ADD HL, DE
@@ -331,7 +348,7 @@ pub const CPU = struct {
             },
             0x1B => { // DEC DE
                 const de = self.registers.get_de();
-                self.registers.set_de(@subWithOverflow(de, 1));
+                self.registers.set_de(@subWithOverflow(de, 1)[0]);
                 return 8;
             },
             0x1C => { // INC E
@@ -351,14 +368,88 @@ pub const CPU = struct {
                 self.flags.zero = false;
                 return 4;
             },
+            0x20 => { // JR NZ, e8
+                const byte = self.next_byte();
+                if (!self.flags.zero) {
+                    self.jr(byte);
+                    return 12;
+                }
+                return 8;
+            },
+            0x21 => { // LD HL, n16
+                const word = self.next_word();
+                self.registers.set_hl(word);
+                return 12;
+            },
+            0x22 => { // LD [HL+], A
+                const hl = self.registers.get_hl();
+                const byte = self.memory.read_byte(hl);
+                self.registers.a = byte;
+                self.registers.set_hl(@addWithOverflow(hl, 1)[0]);
+                return 8;
+            },
+            0x23 => { // INC HL
+                const hl = self.registers.get_hl();
+                self.registers.set_hl(@addWithOverflow(hl, 1)[0]);
+                return 8;
+            },
+            0x24 => { // INC H
+                self.registers.h = self.inc(self.registers.h);
+                return 4;
+            },
+            0x25 => { // DEC H
+                self.registers.h = self.dec(self.registers.h);
+                return 4;
+            },
+
+            0x26 => { // LD H, n8
+                self.registers.h = self.next_byte();
+                return 8;
+            },
             0x27 => { // DAA
                 const tuple = self.daa();
-                self.a = tuple[0];
-                const flags = self.flags;
-                flags.set(self.a == 0, flags.subtract, false, tuple[1]);
+                self.registers.a = tuple[0];
+                const flags = &self.flags;
+                flags.set(self.registers.a == 0, flags.subtract, false, tuple[1]);
+                return 4;
+            },
+            0x28 => { // JZ Z, e8
+                const byte = self.next_byte();
+                if (self.flags.zero) {
+                    self.jr(byte);
+                    return 12;
+                }
+                return 8;
+            },
+            0x29 => { // ADD HL, HL
+                self.add16(self.registers.get_hl());
+                return 8;
+            },
+            0x2A => { // LA A, [HL+]
+                const hl = self.registers.get_hl();
+                self.registers.a = self.memory.read_byte(hl);
+                self.registers.set_hl(@addWithOverflow(hl, 1)[0]);
+                return 8;
+            },
+            0x2B => { // DEC HL
+                const hl = self.registers.get_hl();
+                self.registers.set_hl(@subWithOverflow(hl, 1)[0]);
+                return 8;
+            },
+            0x2C => { // INC L
+                self.registers.l = @addWithOverflow(self.registers.l, 1)[0];
+                return 4;
+            },
+            0x2D => { // DEC L
+                self.registers.l = @subWithOverflow(self.registers.l, 1)[0];
+                return 4;
+            },
+            0x2E => { // LD L, n8
+                self.registers.l = self.next_byte();
+                return 4;
             },
             0x2F => { // CPL
-                self.a = ~self.a;
+                self.registers.a = ~self.registers.a;
                 self.flags.subtract = true;
                 self.flags.half_carry = true;
                 return 4;
@@ -368,7 +459,7 @@ pub const CPU = struct {
                 return 4;
             },
             0x3F => { // CCF
-                const flags = self.flags;
+                const flags = &self.flags;
                 flags.set(flags.zero, false, false, !flags.carry);
                 return 4;
             },
