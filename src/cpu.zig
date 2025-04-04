@@ -795,6 +795,73 @@ pub const CPU = struct {
             0x7F => { // LD A, A
                 return 4;
             },
+            0x80 => { // ADD A, B
+                self.add8(self.registers.b, false);
+                return 4;
+            },
+            0x81 => { // ADD A, C
+                self.add8(self.registers.c, false);
+                return 4;
+            },
+            0x82 => { // ADD A, D
+                self.add8(self.registersdb, false);
+                return 4;
+            },
+            0x83 => { // ADD A, E
+                self.add8(self.registers.e, false);
+                return 4;
+            },
+            0x84 => { // ADD A, H
+                self.add8(self.registers.h, false);
+                return 4;
+            },
+            0x85 => { // ADD A, L
+                self.add8(self.registers.l, false);
+                return 4;
+            },
+            0x86 => { // ADD A, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.add8(byte, false);
+                return 4;
+            },
+            0x87 => { // ADD A, A
+                self.add8(self.registers.a, false);
+                return 4;
+            },
+            0x88 => { // ADC A, B
+                self.add8(self.registers.b, true);
+                return 4;
+            },
+            0x89 => { // ADC A, C
+                self.add8(self.registers.c, true);
+                return 4;
+            },
+            0x8A => { // ADC A, D
+                self.add8(self.registersdb, true);
+                return 4;
+            },
+            0x8B => { // ADC A, E
+                self.add8(self.registers.e, true);
+                return 4;
+            },
+            0x8C => { // ADC A, H
+                self.add8(self.registers.h, true);
+                return 4;
+            },
+            0x8D => { // ADC A, L
+                self.add8(self.registers.l, true);
+                return 4;
+            },
+            0x8E => { // ADC A, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.add8(byte, true);
+                return 4;
+            },
+            0x8F => { // ADC A, A
+                self.add8(self.registers.a, true);
+                return 4;
+            },
+
             0xF3 => { // DI
                 self.disable_interrupt = 2;
                 return 4;
