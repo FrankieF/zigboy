@@ -179,12 +179,12 @@ pub const CPU = struct {
     }
 
     fn addSP(self: *CPU, value: u8) void {
-        const sp = self.registers.sp;
+        const sp = self.sp;
         const value16 = @as(u16, value);
         self.sp = @addWithOverflow(sp, value16)[0];
         const half_carry_flag = (sp & 0xF) + (value16 & 0xF) > (value & 0xF);
         const carry_flag = (sp & 0xFF) + (value16 & 0xFF) > (value & 0xFF);
-        self.flags.set(false, true, half_carry_flag, carry_flag);
+        self.flags.set(false, false, half_carry_flag, carry_flag);
     }
 
     fn swap(self: *CPU, value: u8) u8 {
@@ -1162,7 +1162,7 @@ pub const CPU = struct {
             0xCF => { // RST $08
                 self.push_stack(self.pc);
                 self.pc = 0x08;
-                return 16;
+                return 32;
             },
             0xD0 => { // RET NC
                 if (self.flags.carry) {
@@ -1242,7 +1242,56 @@ pub const CPU = struct {
             0xDF => { // RST $18
                 self.push_stack(self.pc);
                 self.pc = 0x18;
+                return 32;
+            },
+            0xE0 => { // LDH [a8], A
+                const address = 0xFF00 | @as(u16, self.next_byte());
+                self.memory.write_byte(address, self.registers.a);
+                return 12;
+            },
+            0xE1 => { // POP HL
+                self.registers.set_hl(self.pop_stack());
+                return 12;
+            },
+            0xE2 => { // LDH [C] A
+                const address: u16 = 0xFF00 | @as(u16, self.registers.c);
+                self.memory.write_byte(address, self.registers.a);
+                return 8;
+            },
+            0xE5 => { // PUSH HL
+                self.push_stack(self.registers.get_hl());
                 return 16;
+            },
+            0xE6 => { // AND A, n8
+                self.andA(self.next_byte());
+                return 8;
+            },
+            0xE7 => { // RST $20
+                self.push_stack(self.pc);
+                self.pc = 0x20;
+                return 32;
+            },
+            0xE8 => { // ADD SP, e8
+                self.addSP(self.next_byte());
+                return 16;
+            },
+            0xE9 => { // JP HL
+                self.pc = self.next_word();
+                return 4;
+            },
+            0xEA => { // LD [a16], A
+                const word = self.next_word();
+                self.memory.write_byte(word, self.registers.a);
+                return 16;
+            },
+            0xEE => { // XOR A, n8
+                self.xor(self.next_byte());
+                return 8;
+            },
+            0xEF => { // RST $28
+                self.push_stack(self.pc);
+                self.pc = 0x28;
+                return 32;
             },
             0xF3 => { // DI
                 self.disable_interrupt = 2;
