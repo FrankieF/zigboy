@@ -1293,13 +1293,86 @@ pub const CPU = struct {
                 self.pc = 0x28;
                 return 32;
             },
+            0xF0 => { // LDH A, [a8]
+                const address = 0xFF00 | @as(u16, self.next_byte());
+                self.registers.a = self.memory.read_byte(address);
+                return 12;
+            },
+            0xF1 => { // POP AF
+                const value = self.pop_stack();
+                self.registers.a = @truncate(value >> 8);
+                self.flags.zero = value & 0x80 != 0;
+                self.flags.subtract = value & 0x40 != 0;
+                self.flags.half_carry = value & 0x20 != 0;
+                self.flags.carry = value & 0x10 != 0;
+                return 12;
+            },
+            0xF2 => { // LDH A, [C]
+                const address: u16 = 0xFF00 | @as(u16, self.registers.c);
+                self.registers.a = self.memory.read_byte(address);
+                return 8;
+            },
             0xF3 => { // DI
                 self.disable_interrupt = 2;
                 return 4;
             },
+            0xF5 => { // PUSH AF
+                var af = @as(u16, self.registers.a);
+                if (self.flags.zero) {
+                    af |= 0x80;
+                }
+                if (self.flags.subtract) {
+                    af |= 0x40;
+                }
+                if (self.flags.half_carry) {
+                    af |= 0x20;
+                }
+                if (self.flags.carry) {
+                    af |= 0x10;
+                }
+                self.push_stack(af);
+                return 16;
+            },
+            0xF6 => { // OR a, n8
+                self.orA(self.next_byte());
+                return 8;
+            },
+            0xF7 => { // RST $30
+                self.push_stack(self.pc);
+                self.pc = 0x30;
+                return 32;
+            },
+            0xF8 => { // LD HL, SP + e8
+                const sp = self.sp;
+                const byte = self.next_byte();
+                const half_carry = (sp & 0xF) + (byte & 0xF) > 0xF;
+                const carry = (sp & 0xFF) + (byte & 0xFF) > 0xFF;
+                self.flags.set(false, false, half_carry, carry);
+                const value = @addWithOverflow(sp, byte)[0];
+                self.registers.set_hl(value);
+                return 12;
+            },
+            0xF9 => { // LD SP, HL
+                self.sp = self.registers.get_hl();
+                return 8;
+            },
+            0xFA => { // LD A, [a16]
+                const address = self.next_word();
+                self.registers.a = self.memory.read_byte(address);
+                return 16;
+            },
             0xFB => { // EI
                 self.enable_interrupt = 2;
                 return 4;
+            },
+            0xFE => { // CP A, n8
+                self.cp(self.next_byte());
+                return 8;
+            },
+            0xFF => { // RST $38
+                self.push_stack(self.pc);
+                self.pc = 0x38;
+                return 32;
             },
             else => std.debug.print("Opcode [{d}] is not implemented yet.", .{opcode}),
         }
