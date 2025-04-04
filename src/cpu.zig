@@ -95,9 +95,9 @@ pub const CPU = struct {
 
     fn add8(self: *CPU, value: u8, carry: bool) void {
         const a = self.registers.a;
-        const c: u8 = if (self.flags.carry & carry) 1 else 0;
-        const result = @addWithOverflow(@addWithOverflow(a, c), value);
-        self.a = result;
+        const c: u8 = if (self.flags.carry and carry) 1 else 0;
+        const result = @addWithOverflow(@addWithOverflow(a, c)[0], value)[0];
+        self.registers.a = result;
         const zero_flag = result == 0;
         const half_carry_flag = (a & 0xF) + (value & 0xF) + c > 0xF; // carry at 4 bit
         const carry_flag = @as(u16, a) + @as(u16, value) + @as(u16, c) > 0xFF; // carry at 7 bit
@@ -106,9 +106,9 @@ pub const CPU = struct {
 
     fn sub8(self: *CPU, value: u8, carry: bool) void {
         const a = self.registers.a;
-        const c: u8 = if (self.flags.carry & carry) 1 else 0;
-        const result = @subWithOverflow(@subWithOverflow(a, c), value);
-        self.a = result;
+        const c: u8 = if (self.flags.carry and carry) 1 else 0;
+        const result = @subWithOverflow(@subWithOverflow(a, c)[0], value)[0];
+        self.registers.a = result;
         const zero_flag = result == 0;
         const half_carry_flag = (a & 0xF) < (value & 0xF) + c;
         const carry_flag = @as(u16, a) < @as(u16, value) + @as(u16, c);
@@ -804,7 +804,7 @@ pub const CPU = struct {
                 return 4;
             },
             0x82 => { // ADD A, D
-                self.add8(self.registersdb, false);
+                self.add8(self.registers.b, false);
                 return 4;
             },
             0x83 => { // ADD A, E
@@ -837,7 +837,7 @@ pub const CPU = struct {
                 return 4;
             },
             0x8A => { // ADC A, D
-                self.add8(self.registersdb, true);
+                self.add8(self.registers.d, true);
                 return 4;
             },
             0x8B => { // ADC A, E
@@ -859,6 +859,72 @@ pub const CPU = struct {
             },
             0x8F => { // ADC A, A
                 self.add8(self.registers.a, true);
+                return 4;
+            },
+            0x90 => { // SUB A, B
+                self.sub8(self.registers.b, false);
+                return 4;
+            },
+            0x91 => { // SUB A, C
+                self.sub8(self.registers.c, false);
+                return 4;
+            },
+            0x92 => { // SUB A, D
+                self.sub8(self.registers.d, false);
+                return 4;
+            },
+            0x93 => { // SUB A, E
+                self.sub8(self.registers.e, false);
+                return 4;
+            },
+            0x94 => { // SUB A, H
+                self.sub8(self.registers.h, false);
+                return 4;
+            },
+            0x95 => { // SUB A, L
+                self.sub8(self.registers.l, false);
+                return 4;
+            },
+            0x96 => { // SUB A, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.sub8(byte, false);
+                return 4;
+            },
+            0x97 => { // SUB A, A
+                self.sub8(self.registers.a, false);
+                return 4;
+            },
+            0x98 => { // SBC A, B
+                self.sub8(self.registers.b, true);
+                return 4;
+            },
+            0x99 => { // SBC A, C
+                self.sub8(self.registers.c, true);
+                return 4;
+            },
+            0x9A => { // SBC A, D
+                self.sub8(self.registers.d, true);
+                return 4;
+            },
+            0x9B => { // SBC A, E
+                self.sub8(self.registers.e, true);
+                return 4;
+            },
+            0x9C => { // SBC A, H
+                self.sub8(self.registers.h, true);
+                return 4;
+            },
+            0x9D => { // SBC A, L
+                self.sub8(self.registers.l, true);
+                return 4;
+            },
+            0x9E => { // SBC A, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.sub8(byte, true);
+                return 4;
+            },
+            0x9F => { // SBC A, A
+                self.sub8(self.registers.a, true);
                 return 4;
             },
 
