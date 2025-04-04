@@ -123,7 +123,7 @@ pub const CPU = struct {
     }
 
     fn orA(self: *CPU, value: u8) void {
-        const result = self.a | value;
+        const result = self.registers.a | value;
         self.registers.a = result;
         const zero_flag = result == 0;
         self.flags.set(zero_flag, false, false, false);
@@ -139,7 +139,7 @@ pub const CPU = struct {
     fn cp(self: *CPU, value: u8) void {
         const a = self.registers.a;
         sub8(self, value, false);
-        self.a = a;
+        self.registers.a = a;
     }
 
     fn inc(self: *CPU, value: u8) u8 {
@@ -960,37 +960,103 @@ pub const CPU = struct {
                 self.andA(self.registers.a);
                 return 4;
             },
-            0xA8 => { // SBC A, B
+            0xA8 => { // XOR A, B
                 self.xor(self.registers.b);
                 return 4;
             },
-            0xA9 => { // SBC A, C
+            0xA9 => { // XOR A, C
                 self.xor(self.registers.c);
                 return 4;
             },
-            0xAA => { // SBC A, D
+            0xAA => { // XOR A, D
                 self.xor(self.registers.d);
                 return 4;
             },
-            0xAB => { // SBC A, E
+            0xAB => { // XOR A, E
                 self.xor(self.registers.e);
                 return 4;
             },
-            0xAC => { // SBC A, H
+            0xAC => { // XOR A, H
                 self.xor(self.registers.h);
                 return 4;
             },
-            0xAD => { // SBC A, L
+            0xAD => { // XOR A, L
                 self.xor(self.registers.l);
                 return 4;
             },
-            0xAE => { // SBC A, [HL]
+            0xAE => { // XOR A, [HL]
                 const byte = self.memory.read_byte(self.registers.get_hl());
                 self.xor(byte);
                 return 4;
             },
-            0xAF => { // SBC A, A
+            0xAF => { // XOR A, A
                 self.xor(self.registers.a);
+                return 4;
+            },
+            0xB0 => { // OR A, B
+                self.orA(self.registers.b);
+                return 4;
+            },
+            0xB1 => { // OR A, C
+                self.orA(self.registers.c);
+                return 4;
+            },
+            0xB2 => { // OR A, D
+                self.orA(self.registers.d);
+                return 4;
+            },
+            0xB3 => { // OR A, E
+                self.orA(self.registers.e);
+                return 4;
+            },
+            0xB4 => { // OR A, H
+                self.orA(self.registers.h);
+                return 4;
+            },
+            0xB5 => { // OR A, L
+                self.orA(self.registers.l);
+                return 4;
+            },
+            0xB6 => { // OR A, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.orA(byte);
+                return 4;
+            },
+            0xB7 => { // OR A, A
+                self.orA(self.registers.a);
+                return 4;
+            },
+            0xB8 => { // CP A, B
+                self.cp(self.registers.b);
+                return 4;
+            },
+            0xB9 => { // CP A, C
+                self.cp(self.registers.c);
+                return 4;
+            },
+            0xBA => { // CP A, D
+                self.cp(self.registers.d);
+                return 4;
+            },
+            0xBB => { // CP A, E
+                self.cp(self.registers.e);
+                return 4;
+            },
+            0xBC => { // CP A, H
+                self.cp(self.registers.h);
+                return 4;
+            },
+            0xBD => { // CP A, L
+                self.cp(self.registers.l);
+                return 4;
+            },
+            0xBE => { // CP A, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.cp(byte);
+                return 4;
+            },
+            0xBF => { // CP A, A
+                self.cp(self.registers.a);
                 return 4;
             },
             0xF3 => { // DI
