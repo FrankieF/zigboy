@@ -1159,10 +1159,89 @@ pub const CPU = struct {
                 self.add8(self.next_byte(), true);
                 return 8;
             },
-
             0xCF => { // RST $08
                 self.push_stack(self.pc);
                 self.pc = 0x08;
+                return 16;
+            },
+            0xD0 => { // RET NC
+                if (self.flags.carry) {
+                    return 8;
+                }
+                self.pc = self.pop_stack();
+                return 20;
+            },
+            0xD1 => { // POP DE
+                self.registers.set_bc(self.pop_stack());
+                return 12;
+            },
+            0xD2 => { // JP NC, a16
+                const word = self.next_word();
+                if (self.flags.carry) {
+                    return 12;
+                }
+                self.pc = word;
+                return 16;
+            },
+            0xD4 => { // CALL NC, a16
+                const word = self.next_word();
+                if (self.flags.carry) {
+                    return 12;
+                }
+                self.push_stack(self.pc);
+                self.pc = word;
+                return 24;
+            },
+            0xD5 => { // PUSH DE
+                self.push_stack(self.registers.get_de());
+                return 16;
+            },
+            0xD6 => { // SUB A, n8
+                self.sub8(self.next_byte(), false);
+                return 8;
+            },
+            0xD7 => { // RST $10
+                self.push_stack(self.pc);
+                self.pc = 0x10;
+                return 32;
+            },
+            0xD8 => { // RET C
+                if (!self.flags.carry) {
+                    return 8;
+                }
+                self.pc = self.pop_stack();
+                return 20;
+            },
+            0xD9 => { // RETi
+                const word = self.pop_stack();
+                self.pc = word;
+                self.enable_interrupt = 1;
+                return 16;
+            },
+            0xDA => { // JP C, a16
+                const word = self.next_word();
+                if (!self.flags.carry) {
+                    return 12;
+                }
+                self.pc = word;
+                return 16;
+            },
+            0xDC => { // CALL C, a16
+                const word = self.next_word();
+                if (!self.flags.carry) {
+                    return 12;
+                }
+                self.push_stack(word);
+                self.pc = word;
+                return 24;
+            },
+            0xDE => { // SBC A, n8
+                self.sub8(self.next_byte(), true);
+                return 8;
+            },
+            0xDF => { // RST $18
+                self.push_stack(self.pc);
+                self.pc = 0x18;
                 return 16;
             },
             0xF3 => { // DI
