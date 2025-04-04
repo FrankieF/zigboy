@@ -413,7 +413,7 @@ pub const CPU = struct {
                 flags.set(self.registers.a == 0, flags.subtract, false, tuple[1]);
                 return 4;
             },
-            0x28 => { // JZ Z, e8
+            0x28 => { // JR Z, e8
                 const byte = self.next_byte();
                 if (self.flags.zero) {
                     self.jr(byte);
@@ -454,8 +454,85 @@ pub const CPU = struct {
                 self.flags.half_carry = true;
                 return 4;
             },
+            0x30 => { // JR NC, e8
+                const byte = self.next_byte();
+                if (!self.flags.carry) {
+                    self.jr(byte);
+                    return 12;
+                }
+                return 8;
+            },
+            0x31 => { // LD SP, n16
+                self.sp = self.next_word();
+                return 12;
+            },
+            0x32 => { // LD [HL-], A
+                const hl = self.registers.get_hl();
+                const byte = self.memory.read_byte(hl);
+                self.registers.a = byte;
+                self.registers.set_hl(@addWithOverflow(hl, 1)[0]);
+                return 8;
+            },
+            0x33 => { // INC SP
+                const sp = self.sp;
+                self.sp = @subWithOverflow(sp, 1)[0];
+                return 8;
+            },
+            0x34 => { // INC [HL]
+                const hl = self.registers.get_hl();
+                const byte = self.memory.read_byte(hl);
+                const value = self.inc(byte);
+                self.memory.write_byte(hl, value);
+                return 12;
+            },
+            0x35 => { // DEC [HL]
+                const hl = self.registers.get_hl();
+                const byte = self.memory.read_byte(hl);
+                const value = self.dec(byte);
+                self.memory.write_byte(hl, value);
+                return 12;
+            },
+            0x36 => { // LD [HL], n8
+                const byte = self.next_byte();
+                self.memory.write_byte(self.registers.get_hl(), byte);
+                return 12;
+            },
             0x37 => { // SCF
                 self.flags.set(self.flags.zero, false, false, true);
+                return 4;
+            },
+            0x38 => { // JR C, e8
+                const byte = self.next_byte();
+                if (self.flags.carry) {
+                    self.jr(byte);
+                    return 12;
+                }
+                return 8;
+            },
+            0x39 => { // ADD HL, SP
+                self.add16(self.sp);
+                return 8;
+            },
+            0x3A => { // LA A, [HL-]
+                const hl = self.registers.get_hl();
+                self.registers.a = self.memory.read_byte(hl);
+                self.registers.set_hl(@subWithOverflow(hl, 1)[0]);
+                return 8;
+            },
+            0x3B => { // DEC SP
+                self.sp = @subWithOverflow(self.sp, 1)[0];
+                return 8;
+            },
+            0x3C => { // INC A
+                self.registers.a = @addWithOverflow(self.registers.l, 1)[0];
+                return 4;
+            },
+            0x3D => { // DEC A
+                self.registers.a = @subWithOverflow(self.registers.l, 1)[0];
+                return 4;
+            },
+            0x3E => { // LD A, n8
+                self.registers.a = self.next_byte();
                 return 4;
             },
             0x3F => { // CCF
