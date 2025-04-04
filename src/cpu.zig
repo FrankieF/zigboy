@@ -116,28 +116,28 @@ pub const CPU = struct {
     }
 
     fn andA(self: *CPU, value: u8) void {
-        const result = self.a & value;
-        self.a = result;
+        const result = self.registers.a & value;
+        self.registers.a = result;
         const zero_flag = result == 0;
         self.flags.set(zero_flag, false, true, false);
     }
 
     fn orA(self: *CPU, value: u8) void {
         const result = self.a | value;
-        self.a = result;
+        self.registers.a = result;
         const zero_flag = result == 0;
         self.flags.set(zero_flag, false, false, false);
     }
 
     fn xor(self: *CPU, value: u8) void {
-        const result = self.a ^ value;
-        self.a = result;
+        const result = self.registers.a ^ value;
+        self.registers.a = result;
         const zero_flag = result == 0;
         self.flags.set(zero_flag, false, false, false);
     }
 
     fn cp(self: *CPU, value: u8) void {
-        const a = self.a;
+        const a = self.registers.a;
         sub8(self, value, false);
         self.a = a;
     }
@@ -927,7 +927,72 @@ pub const CPU = struct {
                 self.sub8(self.registers.a, true);
                 return 4;
             },
-
+            0xA0 => { // AND A, B
+                self.andA(self.registers.b);
+                return 4;
+            },
+            0xA1 => { // AND A, C
+                self.andA(self.registers.c);
+                return 4;
+            },
+            0xA2 => { // AND A, D
+                self.andA(self.registers.d);
+                return 4;
+            },
+            0xA3 => { // AND A, E
+                self.andA(self.registers.e);
+                return 4;
+            },
+            0xA4 => { // AND A, H
+                self.andA(self.registers.h);
+                return 4;
+            },
+            0xA5 => { // AND A, L
+                self.andA(self.registers.l);
+                return 4;
+            },
+            0xA6 => { // AND A, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.andA(byte);
+                return 4;
+            },
+            0xA7 => { // AND A, A
+                self.andA(self.registers.a);
+                return 4;
+            },
+            0xA8 => { // SBC A, B
+                self.xor(self.registers.b);
+                return 4;
+            },
+            0xA9 => { // SBC A, C
+                self.xor(self.registers.c);
+                return 4;
+            },
+            0xAA => { // SBC A, D
+                self.xor(self.registers.d);
+                return 4;
+            },
+            0xAB => { // SBC A, E
+                self.xor(self.registers.e);
+                return 4;
+            },
+            0xAC => { // SBC A, H
+                self.xor(self.registers.h);
+                return 4;
+            },
+            0xAD => { // SBC A, L
+                self.xor(self.registers.l);
+                return 4;
+            },
+            0xAE => { // SBC A, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.xor(byte);
+                return 4;
+            },
+            0xAF => { // SBC A, A
+                self.xor(self.registers.a);
+                return 4;
+            },
             0xF3 => { // DI
                 self.disable_interrupt = 2;
                 return 4;
