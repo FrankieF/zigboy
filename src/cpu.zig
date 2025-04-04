@@ -533,15 +533,266 @@ pub const CPU = struct {
             },
             0x3E => { // LD A, n8
                 self.registers.a = self.next_byte();
-                return 4;
+                return 8;
             },
             0x3F => { // CCF
                 const flags = &self.flags;
                 flags.set(flags.zero, false, false, !flags.carry);
                 return 4;
             },
+            0x40 => { // LD B, B
+                return 4;
+            },
+            0x41 => { // LD B, C
+                self.registers.b = self.registers.c;
+                return 4;
+            },
+            0x42 => { // LD B, D
+                self.registers.b = self.registers.d;
+                return 4;
+            },
+            0x43 => { // LD B, E
+                self.registers.b = self.registers.e;
+                return 4;
+            },
+            0x44 => { // LD B, H
+                self.registers.b = self.registers.h;
+                return 4;
+            },
+            0x45 => { // LD B, L
+                self.registers.b = self.registers.l;
+                return 4;
+            },
+            0x46 => { // LD B, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.registers.b = byte;
+                return 8;
+            },
+            0x47 => { // LD B, A
+                self.registers.b = self.registers.c;
+                return 4;
+            },
+            0x48 => { // LD C, B
+                self.registers.c = self.registers.c;
+                return 4;
+            },
+            0x49 => { // LD C, C
+                return 4;
+            },
+            0x4A => { // LD C, D
+                self.registers.c = self.registers.d;
+                return 4;
+            },
+            0x4B => { // LD C, E
+                self.registers.c = self.registers.e;
+                return 4;
+            },
+            0x4C => { // LD C, H
+                self.registers.c = self.registers.h;
+                return 4;
+            },
+            0x4D => { // LD C, L
+                self.registers.c = self.registers.l;
+                return 4;
+            },
+            0x4E => { // LD C, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.registers.c = byte;
+                return 8;
+            },
+            0x4F => { // LD C, A
+                self.registers.c = self.registers.a;
+                return 4;
+            },
+            0x50 => { // LD D, B
+                self.registers.d = self.registers.b;
+                return 4;
+            },
+            0x51 => { // LD D, C
+                self.registers.d = self.registers.c;
+                return 4;
+            },
+            0x52 => { // LD D, D
+                return 4;
+            },
+            0x53 => { // LD D, E
+                self.registers.d = self.registers.e;
+                return 4;
+            },
+            0x54 => { // LD D, H
+                self.registers.d = self.registers.h;
+                return 4;
+            },
+            0x55 => { // LD D, L
+                self.registers.d = self.registers.l;
+                return 4;
+            },
+            0x56 => { // LD D, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.registers.d = byte;
+                return 8;
+            },
+            0x57 => { // LD D, A
+                self.registers.d = self.registers.a;
+                return 4;
+            },
+            0x58 => { // LD E, B
+                self.registers.e = self.registers.b;
+                return 4;
+            },
+            0x59 => { // LD E, C
+                self.registers.e = self.registers.c;
+                return 4;
+            },
+            0x5A => { // LD E, D
+                self.registers.e = self.registers.d;
+                return 4;
+            },
+            0x5B => { // LD E, E
+                return 4;
+            },
+            0x5C => { // LD E, H
+                self.registers.e = self.registers.h;
+                return 4;
+            },
+            0x5D => { // LD E, L
+                self.registers.e = self.registers.l;
+                return 4;
+            },
+            0x5E => { // LD E, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.registers.e = byte;
+                return 8;
+            },
+            0x5F => { // LD E, A
+                self.registers.e = self.registers.a;
+                return 4;
+            },
+            0x60 => { // LD H, B
+                self.registers.h = self.registers.b;
+                return 4;
+            },
+            0x61 => { // LD H, C
+                self.registers.h = self.registers.c;
+                return 4;
+            },
+            0x62 => { // LD H, D
+                self.registers.h = self.registers.d;
+                return 4;
+            },
+            0x63 => { // LD H, E
+                self.registers.h = self.registers.e;
+                return 4;
+            },
+            0x64 => { // LD H, H
+                return 4;
+            },
+            0x65 => { // LD H, L
+                self.registers.h = self.registers.l;
+                return 4;
+            },
+            0x66 => { // LD H, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.registers.h = byte;
+                return 8;
+            },
+            0x67 => { // LD H, A
+                self.registers.h = self.registers.a;
+                return 4;
+            },
+            0x68 => { // LD L, B
+                self.registers.l = self.registers.b;
+                return 4;
+            },
+            0x69 => { // LD L, C
+                self.registers.l = self.registers.c;
+                return 4;
+            },
+            0x6A => { // LD L, D
+                self.registers.l = self.registers.d;
+                return 4;
+            },
+            0x6B => { // LD L, E
+                self.registers.l = self.registers.e;
+                return 4;
+            },
+            0x6C => { // LD L, H
+                self.registers.l = self.registers.h;
+                return 4;
+            },
+            0x6D => { // LD L, L
+                return 4;
+            },
+            0x6E => { // LD L, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.registers.l = byte;
+                return 8;
+            },
+            0x6F => { // LD L, A
+                self.registers.l = self.registers.a;
+                return 4;
+            },
+            0x70 => { // LD [HL], B
+                self.memory.write_byte(self.registers.get_hl(), self.registers.b);
+                return 8;
+            },
+            0x71 => { // LD [HL], C
+                self.memory.write_byte(self.registers.get_hl(), self.registers.c);
+                return 8;
+            },
+            0x72 => { // LD [HL], D
+                self.memory.write_byte(self.registers.get_hl(), self.registers.d);
+                return 8;
+            },
+            0x73 => { // LD [HL], E
+                self.memory.write_byte(self.registers.get_hl(), self.registers.b);
+                return 8;
+            },
+            0x74 => { // LD [HL], H
+                self.memory.write_byte(self.registers.get_hl(), self.registers.h);
+                return 8;
+            },
+            0x75 => { // LD [HL], L
+                self.memory.write_byte(self.registers.get_hl(), self.registers.l);
+                return 8;
+            },
             0x76 => { // HALT
                 self.halted = true;
+                return 4;
+            },
+            0x77 => { // LD [HL], A
+                self.memory.write_byte(self.registers.get_hl(), self.registers.a);
+                return 8;
+            },
+            0x78 => { // LD A, B
+                self.registers.a = self.registers.b;
+                return 4;
+            },
+            0x79 => { // LD A, C
+                self.registers.a = self.registers.c;
+                return 4;
+            },
+            0x7A => { // LD A, D
+                self.registers.a = self.registers.d;
+                return 4;
+            },
+            0x7B => { // LD A, E
+                self.registers.a = self.registers.e;
+                return 4;
+            },
+            0x7C => { // LD A, H
+                self.registers.a = self.registers.h;
+                return 4;
+            },
+            0x7D => { // LD A, L
+                return 4;
+            },
+            0x7E => { // LD A, [HL]
+                const byte = self.memory.read_byte(self.registers.get_hl());
+                self.registers.a = byte;
+                return 8;
+            },
+            0x7F => { // LD A, A
                 return 4;
             },
             0xF3 => { // DI
