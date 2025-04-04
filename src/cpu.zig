@@ -74,6 +74,17 @@ pub const CPU = struct {
         };
     }
 
+    pub fn pop_stack(self: *CPU) u16 {
+        const value = self.memory.read_word(self.pc);
+        self.pc += 2;
+        return value;
+    }
+
+    pub fn push_stack(self: *CPU, value: u16) void {
+        self.pc -= 2;
+        self.memory.write_word(self.pc, value);
+    }
+
     pub fn next_byte(self: *CPU) u8 {
         const byte = self.memory.read_byte(self.pc);
         self.pc += 1;
@@ -1058,6 +1069,101 @@ pub const CPU = struct {
             0xBF => { // CP A, A
                 self.cp(self.registers.a);
                 return 4;
+            },
+            0xC0 => { // RET NZ
+                if (self.flags.zero) {
+                    return 8;
+                }
+                self.pc = self.pop_stack();
+                return 20;
+            },
+            0xC1 => { // POP BC
+                self.registers.set_bc(self.pop_stack());
+                return 12;
+            },
+            0xC2 => { // JP NZ, a16
+                const word = self.next_word();
+                if (self.flags.zero) {
+                    return 12;
+                }
+                self.pc = word;
+                return 16;
+            },
+            0xC3 => { // JP a16
+                const word = self.next_word();
+                self.pc = word;
+                return 16;
+            },
+            0xC4 => { // CALL NZ, a16
+                const word = self.next_word();
+                if (self.flags.zero) {
+                    return 12;
+                }
+                self.push_stack(self.pc);
+                self.pc = word;
+                return 24;
+            },
+            0xC5 => { // PUSH BC
+                self.push_stack(self.registers.get_bc());
+                return 16;
+            },
+            0xC6 => { // ADD A, n8
+                self.add8(self.next_byte(), false);
+                return 8;
+            },
+            0xC7 => { // RST $00
+                self.push_stack(self.pc);
+                self.pc = 0;
+                return 32;
+            },
+            0xC8 => { // RET Z
+                if (!self.flags.zero) {
+                    return 8;
+                }
+                self.pc = self.pop_stack();
+                return 20;
+            },
+            0xC9 => { // RET
+                const word = self.pop_stack();
+                self.pc = word;
+                return 16;
+            },
+            0xCA => { // JP Z, a16
+                const word = self.next_word();
+                if (!self.flags.zero) {
+                    return 12;
+                }
+                self.pc = word;
+                return 16;
+            },
+            0xCB => { // PREFIX
+                std.debug.print("Prefix is not implemented yet.", .{});
+                return 0;
+            },
+            0xCC => { // CALL Z, a16
+                const word = self.next_word();
+                if (!self.flags.zero) {
+                    return 12;
+                }
+                self.push_stack(word);
+                self.pc = word;
+                return 24;
+            },
+            0xCD => { // CALL a16
+                const word = self.next_word();
+                self.push_stack(word);
+                self.pc = word;
+                return 24;
+            },
+            0xCE => { // ADC A, n8
+                self.add8(self.next_byte(), true);
+                return 8;
+            },
+
+            0xCF => { // RST $08
+                self.push_stack(self.pc);
+                self.pc = 0x08;
+                return 16;
             },
             0xF3 => { // DI
                 self.disable_interrupt = 2;
