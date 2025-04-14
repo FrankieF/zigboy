@@ -250,6 +250,13 @@ pub const CPU = struct {
         return shift;
     }
 
+    pub fn srl(self: *CPU, value: u8) u8 {
+        const carry = value & 1 == 1;
+        const shift = value >> 1;
+        self.flags.set(shift == 0, false, false, carry);
+        return shift;
+    }
+
     pub fn jr(self: *CPU, value: u8) void {
         const value16 = @as(u16, value);
         self.pc += value16;
@@ -1590,6 +1597,72 @@ pub const CPU = struct {
             },
             0x2F => { // SRA A
                 self.registers.a = self.sra(self.registers.a);
+                return 8;
+            },
+            0x30 => { // SWAP B
+                self.registers.b = self.swap(self.registers.b);
+                return 8;
+            },
+            0x31 => { // SWAP C
+                self.registers.c = self.swap(self.registers.c);
+                return 8;
+            },
+            0x32 => { // SWAP D
+                self.registers.d = self.swap(self.registers.d);
+                return 8;
+            },
+            0x33 => { // SWAP E
+                self.registers.e = self.swap(self.registers.e);
+                return 8;
+            },
+            0x34 => { // SWAP H
+                self.registers.h = self.swap(self.registers.h);
+                return 8;
+            },
+            0x35 => { // SWAP L
+                self.registers.l = self.swap(self.registers.l);
+                return 8;
+            },
+            0x36 => { // SWAP HL
+                const value = self.swap(self.memory.read_byte(self.registers.get_hl()));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x37 => { // SWAP A
+                self.registers.a = self.swap(self.registers.a);
+                return 8;
+            },
+            0x38 => { // SRA B
+                self.registers.b = self.srl(self.registers.b);
+                return 8;
+            },
+            0x39 => { // SRA C
+                self.registers.c = self.srl(self.registers.c);
+                return 8;
+            },
+            0x3A => { // SRA D
+                self.registers.d = self.srl(self.registers.d);
+                return 8;
+            },
+            0x3B => { // SRA E
+                self.registers.e = self.srl(self.registers.e);
+                return 8;
+            },
+            0x3C => { // SRA H
+                self.registers.h = self.srl(self.registers.h);
+                return 8;
+            },
+            0x3D => { // SRA L
+                self.registers.l = self.srl(self.registers.l);
+                return 8;
+            },
+            0x3E => { // SRA HL
+                const value = self.srl(self.memory.read_byte(self.registers.get_hl()));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x3F => { // SRA A
+                self.registers.a = self.srl(self.registers.a);
                 return 8;
             },
             else => std.debug.print("Opcode [{d}] is not implemented yet.", .{opcode}),
