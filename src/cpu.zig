@@ -1744,6 +1744,198 @@ pub const CPU = struct {
                 self.bit(1, self.registers.a);
                 return 8;
             },
+            0x50 => { // BIT 2, B
+                self.bit(2, self.registers.b);
+                return 8;
+            },
+            0x51 => { // BIT 2, C
+                self.bit(2, self.registers.c);
+                return 8;
+            },
+            0x52 => { // BIT 2, D
+                self.bit(2, self.registers.d);
+                return 8;
+            },
+            0x53 => { // BIT 2, E
+                self.bit(2, self.registers.e);
+                return 8;
+            },
+            0x54 => { // BIT 2, H
+                self.bit(2, self.registers.h);
+                return 8;
+            },
+            0x55 => { // BIT 2, L
+                self.bit(2, self.registers.l);
+                return 8;
+            },
+            0x56 => { // BIT 2, HL
+                self.bit(2, self.memory.read_byte(self.registers.get_hl()));
+                return 16;
+            },
+            0x57 => { // BIT 2, A
+                self.bit(2, self.registers.a);
+                return 8;
+            },
+            0x58 => { // BIT 3, B
+                self.bit(3, self.registers.b);
+                return 8;
+            },
+            0x59 => { // BIT 3, C
+                self.bit(3, self.registers.c);
+                return 8;
+            },
+            0x5A => { // BIT 3, D
+                self.bit(3, self.registers.d);
+                return 8;
+            },
+            0x5B => { // BIT 3, E
+                self.bit(3, self.registers.e);
+                return 8;
+            },
+            0x5C => { // BIT 3, H
+                self.bit(3, self.registers.h);
+                return 8;
+            },
+            0x5D => { // BIT 3, L
+                self.bit(3, self.registers.l);
+                return 8;
+            },
+            0x5E => { // BIT 3, HL
+                self.bit(3, self.memory.read_byte(self.registers.get_hl()));
+                return 16;
+            },
+            0x5F => { // BIT 3, A
+                self.bit(3, self.registers.a);
+                return 8;
+            },
+            0x60 => { // BIT 4, B
+                self.bit(4, self.registers.b);
+                return 8;
+            },
+            0x61 => { // BIT 4, C
+                self.bit(4, self.registers.c);
+                return 8;
+            },
+            0x62 => { // BIT 4, D
+                self.bit(4, self.registers.d);
+                return 8;
+            },
+            0x63 => { // BIT 4, E
+                self.bit(4, self.registers.e);
+                return 8;
+            },
+            0x64 => { // BIT 4, H
+                self.bit(4, self.registers.h);
+                return 8;
+            },
+            0x65 => { // BIT 4, L
+                self.bit(4, self.registers.l);
+                return 8;
+            },
+            0x66 => { // BIT 4, HL
+                self.bit(4, self.memory.read_byte(self.registers.get_hl()));
+                return 16;
+            },
+            0x67 => { // BIT 4, A
+                self.bit(4, self.registers.a);
+                return 8;
+            },
+            0x68 => { // BIT 5, B
+                self.bit(5, self.registers.b);
+                return 8;
+            },
+            0x69 => { // BIT 5, C
+                self.bit(5, self.registers.c);
+                return 8;
+            },
+            0x6A => { // BIT 5, D
+                self.bit(5, self.registers.d);
+                return 8;
+            },
+            0x6B => { // BIT 5, E
+                self.bit(5, self.registers.e);
+                return 8;
+            },
+            0x6C => { // BIT 5, H
+                self.bit(5, self.registers.h);
+                return 8;
+            },
+            0x6D => { // BIT 5, L
+                self.bit(5, self.registers.l);
+                return 8;
+            },
+            0x6E => { // BIT 5, HL
+                self.bit(5, self.memory.read_byte(self.registers.get_hl()));
+                return 16;
+            },
+            0x6F => { // BIT 5, A
+                self.bit(5, self.registers.a);
+                return 8;
+            },
+            0x70 => { // BIT 6, B
+                self.bit(6, self.registers.b);
+                return 8;
+            },
+            0x71 => { // BIT 6, C
+                self.bit(6, self.registers.c);
+                return 8;
+            },
+            0x72 => { // BIT 6, D
+                self.bit(6, self.registers.d);
+                return 8;
+            },
+            0x73 => { // BIT 6, E
+                self.bit(6, self.registers.e);
+                return 8;
+            },
+            0x74 => { // BIT 6, H
+                self.bit(6, self.registers.h);
+                return 8;
+            },
+            0x75 => { // BIT 6, L
+                self.bit(6, self.registers.l);
+                return 8;
+            },
+            0x76 => { // BIT 6, HL
+                self.bit(6, self.memory.read_byte(self.registers.get_hl()));
+                return 16;
+            },
+            0x77 => { // BIT 6, A
+                self.bit(6, self.registers.a);
+                return 8;
+            },
+            0x78 => { // BIT 7, B
+                self.bit(7, self.registers.b);
+                return 8;
+            },
+            0x79 => { // BIT 7, C
+                self.bit(7, self.registers.c);
+                return 8;
+            },
+            0x7A => { // BIT 7, D
+                self.bit(7, self.registers.d);
+                return 8;
+            },
+            0x7B => { // BIT 7, E
+                self.bit(7, self.registers.e);
+                return 8;
+            },
+            0x7C => { // BIT 7, H
+                self.bit(7, self.registers.h);
+                return 8;
+            },
+            0x7D => { // BIT 7, L
+                self.bit(7, self.registers.l);
+                return 8;
+            },
+            0x7E => { // BIT 7, HL
+                self.bit(7, self.memory.read_byte(self.registers.get_hl()));
+                return 16;
+            },
+            0x7F => { // BIT 7, A
+                self.bit(7, self.registers.a);
+                return 8;
+            },
             else => std.debug.print("Opcode [{d}] is not implemented yet.", .{opcode}),
         }
         return 0;
