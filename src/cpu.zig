@@ -1936,6 +1936,270 @@ pub const CPU = struct {
                 self.bit(7, self.registers.a);
                 return 8;
             },
+            0x80 => { // RES 0, B
+                self.registers.b &= ~(@as(u8, 1 << 0));
+                return 8;
+            },
+            0x81 => { // RES 0, C
+                self.registers.c &= ~(@as(u8, 1 << 0));
+                return 8;
+            },
+            0x82 => { // RES 0, D
+                self.registers.d &= ~(@as(u8, 1 << 0));
+                return 8;
+            },
+            0x83 => { // RES 0, E
+                self.registers.e &= ~(@as(u8, 1 << 0));
+                return 8;
+            },
+            0x84 => { // RES 0, H
+                self.registers.h &= ~(@as(u8, 1 << 0));
+                return 8;
+            },
+            0x85 => { // RES 0, L
+                self.registers.l &= ~(@as(u8, 1 << 0));
+                return 8;
+            },
+            0x86 => { // RES 0, HL
+                const value = self.memory.read_byte(self.registers.get_hl()) & ~(@as(u8, 1 << 0));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x87 => { // RES 0, A
+                self.registers.a &= ~(@as(u8, 1 << 0));
+                return 8;
+            },
+            0x88 => { // RES 1, B
+                self.registers.b &= ~(@as(u8, 1 << 1));
+                return 8;
+            },
+            0x89 => { // RES 1, C
+                self.registers.c &= ~(@as(u8, 1 << 1));
+                return 8;
+            },
+            0x8A => { // RES 1, D
+                self.registers.d &= ~(@as(u8, 1 << 1));
+                return 8;
+            },
+            0x8B => { // RES 1, E
+                self.registers.e &= ~(@as(u8, 1 << 1));
+                return 8;
+            },
+            0x8C => { // RES 1, H
+                self.registers.h &= ~(@as(u8, 1 << 1));
+                return 8;
+            },
+            0x8D => { // RES 1, L
+                self.registers.l &= ~(@as(u8, 1 << 1));
+                return 8;
+            },
+            0x8E => { // RES 1, HL
+                const value = self.memory.read_byte(self.registers.get_hl()) & ~(@as(u8, 1 << 1));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x8F => { // RES 1, A
+                self.registers.a &= ~(@as(u8, 1 << 1));
+                return 8;
+            },
+            0x90 => { // RES 2, B
+                self.registers.b &= ~(@as(u8, 1 << 2));
+                return 8;
+            },
+            0x91 => { // RES 2, C
+                self.registers.c &= ~(@as(u8, 1 << 2));
+                return 8;
+            },
+            0x92 => { // RES 2, D
+                self.registers.d &= ~(@as(u8, 1 << 2));
+                return 8;
+            },
+            0x93 => { // RES 2, E
+                self.registers.e &= ~(@as(u8, 1 << 2));
+                return 8;
+            },
+            0x94 => { // RES 2, H
+                self.registers.h &= ~(@as(u8, 1 << 2));
+                return 8;
+            },
+            0x95 => { // RES 2, L
+                self.registers.l &= ~(@as(u8, 1 << 2));
+                return 8;
+            },
+            0x96 => { // RES 2, HL
+                const value = self.memory.read_byte(self.registers.get_hl()) & ~(@as(u8, 1 << 2));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x97 => { // RES 2, A
+                self.registers.a &= ~(@as(u8, 1 << 2));
+                return 8;
+            },
+            0x98 => { // RES 3, B
+                self.registers.b &= ~(@as(u8, 1 << 3));
+                return 8;
+            },
+            0x99 => { // RES 3, C
+                self.registers.c &= ~(@as(u8, 1 << 3));
+                return 8;
+            },
+            0x9A => { // RES 3, D
+                self.registers.d &= ~(@as(u8, 1 << 3));
+                return 8;
+            },
+            0x9B => { // RES 3, E
+                self.registers.e &= ~(@as(u8, 1 << 3));
+                return 8;
+            },
+            0x9C => { // RES 3, H
+                self.registers.h &= ~(@as(u8, 1 << 3));
+                return 8;
+            },
+            0x9D => { // RES 3, L
+                self.registers.l &= ~(@as(u8, 1 << 3));
+                return 8;
+            },
+            0x9E => { // RES 3, HL
+                const value = self.memory.read_byte(self.registers.get_hl()) & ~(@as(u8, 1 << 3));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x9F => { // RES 3, A
+                self.registers.a &= ~(@as(u8, 1 << 3));
+                return 8;
+            },
+            0xA0 => { // RES 4, B
+                self.registers.b &= ~(@as(u8, 1 << 4));
+                return 8;
+            },
+            0xA1 => { // RES 4, C
+                self.registers.c &= ~(@as(u8, 1 << 4));
+                return 8;
+            },
+            0xA2 => { // RES 4, D
+                self.registers.d &= ~(@as(u8, 1 << 4));
+                return 8;
+            },
+            0xA3 => { // RES 4, E
+                self.registers.e &= ~(@as(u8, 1 << 4));
+                return 8;
+            },
+            0xA4 => { // RES 4, H
+                self.registers.h &= ~(@as(u8, 1 << 4));
+                return 8;
+            },
+            0xA5 => { // RES 4, L
+                self.registers.l &= ~(@as(u8, 1 << 4));
+                return 8;
+            },
+            0xA6 => { // RES 4, HL
+                const value = self.memory.read_byte(self.registers.get_hl()) & ~(@as(u8, 1 << 4));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0xA7 => { // RES 4, A
+                self.registers.a &= ~(@as(u8, 1 << 4));
+                return 8;
+            },
+            0xA8 => { // RES 5, B
+                self.registers.b &= ~(@as(u8, 1 << 5));
+                return 8;
+            },
+            0xA9 => { // RES 5, C
+                self.registers.c &= ~(@as(u8, 1 << 5));
+                return 8;
+            },
+            0xAA => { // RES 5, D
+                self.registers.d &= ~(@as(u8, 1 << 5));
+                return 8;
+            },
+            0xAB => { // RES 5, E
+                self.registers.e &= ~(@as(u8, 1 << 5));
+                return 8;
+            },
+            0xAC => { // RES 5, H
+                self.registers.h &= ~(@as(u8, 1 << 5));
+                return 8;
+            },
+            0xAD => { // RES 5, L
+                self.registers.l &= ~(@as(u8, 1 << 5));
+                return 8;
+            },
+            0xAE => { // RES 5, HL
+                const value = self.memory.read_byte(self.registers.get_hl()) & ~(@as(u8, 1 << 5));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0xAF => { // RES 5, A
+                self.registers.a &= ~(@as(u8, 1 << 5));
+                return 8;
+            },
+            0xB0 => { // RES 6, B
+                self.registers.b &= ~(@as(u8, 1 << 6));
+                return 8;
+            },
+            0xB1 => { // RES 6, C
+                self.registers.c &= ~(@as(u8, 1 << 6));
+                return 8;
+            },
+            0xB2 => { // RES 6, D
+                self.registers.d &= ~(@as(u8, 1 << 6));
+                return 8;
+            },
+            0xB3 => { // RES 6, E
+                self.registers.e &= ~(@as(u8, 1 << 6));
+                return 8;
+            },
+            0xB4 => { // RES 6, H
+                self.registers.h &= ~(@as(u8, 1 << 6));
+                return 8;
+            },
+            0xB5 => { // RES 6, L
+                self.registers.l &= ~(@as(u8, 1 << 6));
+                return 8;
+            },
+            0xB6 => { // RES 6, HL
+                const value = self.memory.read_byte(self.registers.get_hl()) & ~(@as(u8, 1 << 6));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0xB7 => { // RES 6, A
+                self.registers.a &= ~(@as(u8, 1 << 6));
+                return 8;
+            },
+            0xB8 => { // RES 7, B
+                self.registers.b &= ~(@as(u8, 1 << 7));
+                return 8;
+            },
+            0xB9 => { // RES 7, C
+                self.registers.c &= ~(@as(u8, 1 << 7));
+                return 8;
+            },
+            0xBA => { // RES 7, D
+                self.registers.d &= ~(@as(u8, 1 << 7));
+                return 8;
+            },
+            0xBB => { // RES 7, E
+                self.registers.e &= ~(@as(u8, 1 << 7));
+                return 8;
+            },
+            0xBC => { // RES 7, H
+                self.registers.h &= ~(@as(u8, 1 << 7));
+                return 8;
+            },
+            0xBD => { // RES 7, L
+                self.registers.l &= ~(@as(u8, 1 << 7));
+                return 8;
+            },
+            0xBE => { // RES 7, HL
+                const value = self.memory.read_byte(self.registers.get_hl()) & ~(@as(u8, 1 << 7));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0xBF => { // RES 7, A
+                self.registers.a &= ~(@as(u8, 1 << 7));
+                return 8;
+            },
             else => std.debug.print("Opcode [{d}] is not implemented yet.", .{opcode}),
         }
         return 0;
