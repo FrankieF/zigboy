@@ -257,6 +257,21 @@ pub const CPU = struct {
         return shift;
     }
 
+    pub fn bit(self: *CPU, value: u8, register: u8) void {
+        const shift: u8 = switch (register) {
+            0 => 0,
+            1 => 2,
+            2 => 4,
+            3 => 8,
+            4 => 16,
+            5 => 32,
+            6 => 64,
+            else => 128,
+        };
+        const result = value & shift == 0;
+        self.flags.set(result, false, true, self.flags.carry);
+    }
+
     pub fn jr(self: *CPU, value: u8) void {
         const value16 = @as(u16, value);
         self.pc += value16;
@@ -1663,6 +1678,70 @@ pub const CPU = struct {
             },
             0x3F => { // SRA A
                 self.registers.a = self.srl(self.registers.a);
+                return 8;
+            },
+            0x40 => { // BIT 0, B
+                self.bit(0, self.registers.b);
+                return 8;
+            },
+            0x41 => { // BIT 0, C
+                self.bit(0, self.registers.c);
+                return 8;
+            },
+            0x42 => { // BIT 0, D
+                self.bit(0, self.registers.d);
+                return 8;
+            },
+            0x43 => { // BIT 0, E
+                self.bit(0, self.registers.e);
+                return 8;
+            },
+            0x44 => { // BIT 0, H
+                self.bit(0, self.registers.h);
+                return 8;
+            },
+            0x45 => { // BIT 0, L
+                self.bit(0, self.registers.l);
+                return 8;
+            },
+            0x46 => { // BIT 0, HL
+                self.bit(0, self.memory.read_byte(self.registers.get_hl()));
+                return 16;
+            },
+            0x47 => { // BIT 0, A
+                self.bit(0, self.registers.a);
+                return 8;
+            },
+            0x48 => { // BIT 1, B
+                self.bit(1, self.registers.b);
+                return 8;
+            },
+            0x49 => { // BIT 1, C
+                self.bit(1, self.registers.c);
+                return 8;
+            },
+            0x4A => { // BIT 1, D
+                self.bit(1, self.registers.d);
+                return 8;
+            },
+            0x4B => { // BIT 1, E
+                self.bit(1, self.registers.e);
+                return 8;
+            },
+            0x4C => { // BIT 1, H
+                self.bit(1, self.registers.h);
+                return 8;
+            },
+            0x4D => { // BIT 1, L
+                self.bit(1, self.registers.l);
+                return 8;
+            },
+            0x4E => { // BIT 1, HL
+                self.bit(1, self.memory.read_byte(self.registers.get_hl()));
+                return 16;
+            },
+            0x4F => { // BIT 1, A
+                self.bit(1, self.registers.a);
                 return 8;
             },
             else => std.debug.print("Opcode [{d}] is not implemented yet.", .{opcode}),
