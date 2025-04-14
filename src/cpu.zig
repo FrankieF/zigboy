@@ -236,6 +236,20 @@ pub const CPU = struct {
         return rotated;
     }
 
+    pub fn sla(self: *CPU, value: u8) u8 {
+        const carry = value & 0x80 == 0x80;
+        const shift = value << 1;
+        self.flags.set(shift == 0, false, false, carry);
+        return shift;
+    }
+
+    pub fn sra(self: *CPU, value: u8) u8 {
+        const carry = value & 1 == 1;
+        const shift = (value >> 1) | (value & 0x80);
+        self.flags.set(shift == 0, false, false, carry);
+        return shift;
+    }
+
     pub fn jr(self: *CPU, value: u8) void {
         const value16 = @as(u16, value);
         self.pc += value16;
@@ -1137,8 +1151,7 @@ pub const CPU = struct {
                 return 16;
             },
             0xCB => { // PREFIX
-                std.debug.print("Prefix is not implemented yet.", .{});
-                return 0;
+                return prefix(self, self.next_byte());
             },
             0xCC => { // CALL Z, a16
                 const word = self.next_word();
@@ -1373,6 +1386,211 @@ pub const CPU = struct {
                 self.push_stack(self.pc);
                 self.pc = 0x38;
                 return 32;
+            },
+            else => std.debug.print("Opcode [{d}] is not implemented yet.", .{opcode}),
+        }
+        return 0;
+    }
+
+    pub fn prefix(self: *CPU, opcode: u8) u32 {
+        switch (opcode) {
+            0x00 => { // RLC B
+                self.registers.b = self.rlca(self.registers.b);
+                return 8;
+            },
+            0x01 => { // RLC C
+                self.registers.c = self.rlca(self.registers.c);
+                return 8;
+            },
+            0x02 => { // RLC D
+                self.registers.d = self.rlca(self.registers.d);
+                return 8;
+            },
+            0x03 => { // RLC E
+                self.registers.e = self.rlca(self.registers.e);
+                return 8;
+            },
+            0x04 => { // RLC H
+                self.registers.h = self.rlca(self.registers.h);
+                return 8;
+            },
+            0x05 => { // RLC L
+                self.registers.l = self.rlca(self.registers.l);
+                return 8;
+            },
+            0x06 => { // RLC HL
+                const value = self.rlca(self.memory.read_byte(self.registers.get_hl()));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x07 => { // RLC A
+                self.registers.a = self.rlca(self.registers.a);
+                return 8;
+            },
+            0x08 => { // RRC B
+                self.registers.b = self.rrca(self.registers.b);
+                return 8;
+            },
+            0x09 => { // RRC C
+                self.registers.c = self.rrca(self.registers.c);
+                return 8;
+            },
+            0x0A => { // RRC D
+                self.registers.d = self.rrca(self.registers.d);
+                return 8;
+            },
+            0x0B => { // RRC E
+                self.registers.e = self.rrca(self.registers.e);
+                return 8;
+            },
+            0x0C => { // RRC H
+                self.registers.h = self.rrca(self.registers.h);
+                return 8;
+            },
+            0x0D => { // RRC L
+                self.registers.l = self.rrca(self.registers.l);
+                return 8;
+            },
+            0x0E => { // RRC HL
+                const value = self.rrca(self.memory.read_byte(self.registers.get_hl()));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x0F => { // RRC A
+                self.registers.a = self.rrca(self.registers.a);
+                return 8;
+            },
+            0x10 => { // RL B
+                self.registers.b = self.rla(self.registers.b);
+                return 8;
+            },
+            0x11 => { // RL C
+                self.registers.c = self.rla(self.registers.c);
+                return 8;
+            },
+            0x12 => { // RL D
+                self.registers.d = self.rla(self.registers.d);
+                return 8;
+            },
+            0x13 => { // RL E
+                self.registers.e = self.rla(self.registers.e);
+                return 8;
+            },
+            0x14 => { // RL H
+                self.registers.h = self.rla(self.registers.h);
+                return 8;
+            },
+            0x15 => { // RL L
+                self.registers.l = self.rla(self.registers.l);
+                return 8;
+            },
+            0x16 => { // RL HL
+                const value = self.rla(self.memory.read_byte(self.registers.get_hl()));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x17 => { // RL A
+                self.registers.a = self.rla(self.registers.a);
+                return 8;
+            },
+            0x18 => { // RR B
+                self.registers.b = self.rra(self.registers.b);
+                return 8;
+            },
+            0x19 => { // RR C
+                self.registers.c = self.rra(self.registers.c);
+                return 8;
+            },
+            0x1A => { // RR D
+                self.registers.d = self.rra(self.registers.d);
+                return 8;
+            },
+            0x1B => { // RR E
+                self.registers.e = self.rra(self.registers.e);
+                return 8;
+            },
+            0x1C => { // RR H
+                self.registers.h = self.rra(self.registers.h);
+                return 8;
+            },
+            0x1D => { // RR L
+                self.registers.l = self.rra(self.registers.l);
+                return 8;
+            },
+            0x1E => { // RR HL
+                const value = self.rra(self.memory.read_byte(self.registers.get_hl()));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x1F => { // RR A
+                self.registers.a = self.rra(self.registers.a);
+                return 8;
+            },
+            0x20 => { // SLA B
+                self.registers.b = self.sla(self.registers.b);
+                return 8;
+            },
+            0x21 => { // SLA C
+                self.registers.c = self.sla(self.registers.c);
+                return 8;
+            },
+            0x22 => { // SLA D
+                self.registers.d = self.sla(self.registers.d);
+                return 8;
+            },
+            0x23 => { // SLA E
+                self.registers.e = self.sla(self.registers.e);
+                return 8;
+            },
+            0x24 => { // SLA H
+                self.registers.h = self.sla(self.registers.h);
+                return 8;
+            },
+            0x25 => { // SLA L
+                self.registers.l = self.sla(self.registers.l);
+                return 8;
+            },
+            0x26 => { // SLA HL
+                const value = self.sla(self.memory.read_byte(self.registers.get_hl()));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x27 => { // SLA A
+                self.registers.a = self.sla(self.registers.a);
+                return 8;
+            },
+            0x28 => { // SRA B
+                self.registers.b = self.sra(self.registers.b);
+                return 8;
+            },
+            0x29 => { // SRA C
+                self.registers.c = self.sra(self.registers.c);
+                return 8;
+            },
+            0x2A => { // SRA D
+                self.registers.d = self.sra(self.registers.d);
+                return 8;
+            },
+            0x2B => { // SRA E
+                self.registers.e = self.sra(self.registers.e);
+                return 8;
+            },
+            0x2C => { // SRA H
+                self.registers.h = self.sra(self.registers.h);
+                return 8;
+            },
+            0x2D => { // SRA L
+                self.registers.l = self.sra(self.registers.l);
+                return 8;
+            },
+            0x2E => { // SRA HL
+                const value = self.sra(self.memory.read_byte(self.registers.get_hl()));
+                self.memory.write_byte(self.registers.get_hl(), value);
+                return 16;
+            },
+            0x2F => { // SRA A
+                self.registers.a = self.sra(self.registers.a);
+                return 8;
             },
             else => std.debug.print("Opcode [{d}] is not implemented yet.", .{opcode}),
         }
