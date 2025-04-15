@@ -25,12 +25,12 @@ pub const RealTimeClock = struct {
 
     pub fn step(self: *RealTimeClock) void {
         const duration: u64 = get_time_since_epoch() - self.zero;
-        self.seconds = @mod(duration, 60);
-        self.minutes = @mod(duration / 60, 60);
-        self.hours = @mod(duration / 3600, 24);
+        self.seconds = @truncate(@mod(duration, 60));
+        self.minutes = @truncate(@mod(duration / 60, 60));
+        self.hours = @truncate(@mod(duration / 3600, 24));
 
         const days = duration / 3600 / 24;
-        self.low_bits = @mod(days, 256);
+        self.low_bits = @truncate(@mod(days, 256));
         switch (days) {
             0x0...0x0FF => {},
             0x100...0x1FF => self.high_bits |= 1,

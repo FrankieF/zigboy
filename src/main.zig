@@ -8,8 +8,8 @@ const std = @import("std");
 
 pub fn main() !void {
     //test_cpu();
-    // test_mbc();
-    test_real_time_clock();
+    test_mbc();
+    // test_real_time_clock();
     // const c = try test_catridge();
     // std.debug.print("Catridge {any}", .{c});
     // std.debug.print("Title {c}", .{c.title});
@@ -35,6 +35,9 @@ fn test_mbc() void {
     var mbc2 = MBC.MBC2.init(data[0..], 10, allocator);
     _ = mbc2.read_byte(1);
     mbc2.write_byte(1, 1);
+    var mbc3 = MBC.MBC3.init(data[0..], 10, null, allocator);
+    _ = mbc3.read_byte(1);
+    mbc3.write_byte(1, 1);
 }
 
 fn test_catridge() Catridge.CatridgeError!Catridge.Catridge {
