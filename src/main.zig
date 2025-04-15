@@ -2,14 +2,30 @@ const Instruction = @import("instruction.zig");
 const CPU = @import("cpu.zig");
 const Memory = @import("memory.zig");
 const Catridge = @import("catridge.zig");
+const MBC = @import("mbc.zig");
 const std = @import("std");
 
 pub fn main() !void {
     //test_cpu();
-    const c = try test_catridge();
-    std.debug.print("Catridge {any}", .{c});
-    std.debug.print("Title {c}", .{c.title});
+    test_mbc();
+    // const c = try test_catridge();
+    // std.debug.print("Catridge {any}", .{c});
+    // std.debug.print("Title {c}", .{c.title});
     std.debug.print("Compiled ok!", .{});
+}
+
+fn test_mbc() void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    const data = [_]u8{ 1, 2, 3, 4, 5 };
+    var rom = MBC.Rom.init(data[0..]);
+    _ = rom.read_byte(1);
+    var mbc1 = MBC.MBC1.init(data[0..], 10, allocator);
+    _ = mbc1.read_byte(1);
+    mbc1.write_byte(1, 1);
+    var mbc2 = MBC.MBC2.init(data[0..], 10, allocator);
+    _ = mbc2.read_byte(1);
+    mbc2.write_byte(1, 1);
 }
 
 fn test_catridge() Catridge.CatridgeError!Catridge.Catridge {
