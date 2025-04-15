@@ -224,3 +224,61 @@ pub const MBC3 = struct {
 
     pub fn save(_: *MBC3) void {}
 };
+
+pub const MBC5 = struct {
+    rom: []const u8,
+    rom_bank: usize = 0,
+    ram_enabled: bool = false,
+    ram: []u8,
+    ram_bank: usize = 0,
+
+    pub fn init(rom: []const u8, ram_size: usize, allocator: std.mem.Allocator) MBC5 {
+        return MBC5{
+            .rom = rom,
+            .ram = allocator.alloc(u8, ram_size) catch undefined,
+        };
+    }
+
+    pub fn read_byte(self: *MBC5, address: u16) u8 {
+        switch (address) {
+            0x0000...0x3FFF => return self.rom[address],
+            0x4000...0x7FFF => {
+                const start = 0x4000 * self.rom_bank;
+                const offset = start + address - 0x4000;
+                return self.rom[offset];
+            },
+            0xA000...0xBFFF => {
+                if (!self.ram_enabled) {
+                    return 0;
+                }
+                const start = 0x2000 * self.ram_bank;
+                const offset = start + address - 0xA000;
+                return self.rom[offset];
+            },
+            else => return 0,
+        }
+    }
+
+    pub fn write_byte(self: *MBC5, address: u16, value: u8) void {
+        switch (address) {
+            0x000...0x1FFF => self.ram_enabled = value * 0x0F == 0x0A,
+            0x2000...0x2FFF => self.rom_bank = (self.rom_bank & 0x100) | value,
+            0x3000...0x3FFF => self.rom_bank = (self.rom_bank & 0xFF) | (@as(u16, value) << 8),
+            0x4000...0x5FFF => self.rom_bank = value & 0xF,
+            0xA000...0xBFFF => {
+                if (self.ram_enabled) {
+                    const start = 0x2000 * self.ram_bank;
+                    const offset = start + address - 0xA000;
+                    self.ram[offset] = value;
+                }
+            },
+            else => {},
+        }
+    }
+
+    pub fn size(self: *MBC5) usize {
+        return self.rom.len;
+    }
+
+    pub fn save(_: *MBC5) void {}
+};
