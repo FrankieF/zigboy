@@ -3,15 +3,24 @@ const CPU = @import("cpu.zig");
 const Memory = @import("memory.zig");
 const Catridge = @import("catridge.zig");
 const MBC = @import("mbc.zig");
+const RTC = @import("real_time_clock.zig");
 const std = @import("std");
 
 pub fn main() !void {
     //test_cpu();
-    test_mbc();
+    // test_mbc();
+    test_real_time_clock();
     // const c = try test_catridge();
     // std.debug.print("Catridge {any}", .{c});
     // std.debug.print("Title {c}", .{c.title});
     std.debug.print("Compiled ok!", .{});
+}
+
+fn test_real_time_clock() void {
+    var rtc = RTC.RealTimeClock.init(null);
+    std.debug.print("Zero {any}", .{rtc.zero});
+    _ = rtc.read_byte(1);
+    rtc.write_byte(1, 1);
 }
 
 fn test_mbc() void {
