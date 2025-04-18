@@ -42,6 +42,10 @@ pub const Catridge = struct {
         return catridge;
     }
 
+    pub fn read_byte(self: Catridge, address: u16) u8 {
+        return self.mbc.read_byte(address);
+    }
+
     fn create(path: []const u8, allocator: std.mem.Allocator) CatridgeError!Catridge {
         std.fs.accessAbsolute(path, .{}) catch {
             return CatridgeError.FileNotFound;

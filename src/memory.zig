@@ -1,21 +1,27 @@
+const Catridge = @import("catridge.zig").Catridge;
+
 const HIGH_RAM_LENGTH = 127;
 const WORK_RAM_LENGTH = 8192;
 
 pub const Memory = struct {
     high_ram: [HIGH_RAM_LENGTH]u8,
     work_ram: [WORK_RAM_LENGTH]u8, // 2 4kb work ram
+    catridge: Catridge,
 
-    pub fn init() Memory {
+    pub fn init(catridge: Catridge) Memory {
         const high_ram = [_]u8{0} ** HIGH_RAM_LENGTH;
         const work_ram = [_]u8{0} ** WORK_RAM_LENGTH;
         return Memory{
             .high_ram = high_ram,
             .work_ram = work_ram,
+            .catridge = catridge,
         };
     }
 
     pub fn read_byte(self: *Memory, address: u16) u8 {
         switch (address) {
+            0x000...0x7FFF => return self.catridge.read_byte(address),
+            0xA000...0xBFFF => return self.catridge.read_byte(address),
             0xC000...0xDFFF => { // work ram 8 kb
                 return self.work_ram[address - 0xC000];
             },

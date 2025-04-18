@@ -7,12 +7,16 @@ const RTC = @import("real_time_clock.zig");
 const std = @import("std");
 
 pub fn main() !void {
-    //test_cpu();
     //test_mbc();
     // test_real_time_clock();
     const c = try test_catridge();
-    std.debug.print("Catridge {any}", .{c});
-    std.debug.print("Title {c}", .{c.title});
+    var cpu = test_cpu(c);
+    // std.debug.print("Catridge {any}", .{c});
+    // std.debug.print("Title {c}", .{c.title});
+    for (0..1000) |_| {
+        const byte = cpu.next_byte();
+        _ = cpu.execute(byte);
+    }
     std.debug.print("Compiled ok!", .{});
 }
 
@@ -55,8 +59,8 @@ fn test_catridge() Catridge.CatridgeError!Catridge.Catridge {
     return Catridge.Catridge.init(path, allocator);
 }
 
-fn test_cpu() void {
-    const memory: Memory.Memory = Memory.Memory.init();
+fn test_cpu(catridge: Catridge.Catridge) CPU.CPU {
+    const memory: Memory.Memory = Memory.Memory.init(catridge);
     const registers: CPU.Registers = .{
         .a = 0,
         .b = 0,
@@ -72,6 +76,5 @@ fn test_cpu() void {
         .subtract = false,
         .zero = false,
     };
-    var cpu: CPU.CPU = CPU.CPU.init(registers, flags, memory);
-    _ = cpu.execute(0);
+    return CPU.CPU.init(registers, flags, memory);
 }
