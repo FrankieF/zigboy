@@ -41,6 +41,11 @@ fn test_mbc() void {
     var mbc5 = MBC.MBC5.init(data[0..], 10, allocator);
     _ = mbc5.read_byte(1);
     mbc5.write_byte(1, 1);
+    var mbc = MBC.MBC{ .mbc2 = mbc2 };
+    _ = mbc.read_byte(1);
+    mbc.write_byte(1, 1);
+    _ = mbc.size();
+    mbc.save();
 }
 
 fn test_catridge() Catridge.CatridgeError!Catridge.Catridge {

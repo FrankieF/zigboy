@@ -41,7 +41,7 @@ pub const RealTimeClock = struct {
         }
     }
 
-    pub fn read_byte(self: *RealTimeClock, address: u16) u8 {
+    pub fn read_byte(self: RealTimeClock, address: u16) u8 {
         return switch (address) {
             0x80 => self.seconds,
             0x09 => self.minutes,

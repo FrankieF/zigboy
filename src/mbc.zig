@@ -1,4 +1,56 @@
 const std = @import("std");
+const RTC = @import("real_time_clock.zig");
+
+pub const MBC = union(enum) {
+    rom: Rom,
+    mbc1: MBC1,
+    mbc2: MBC2,
+    mbc3: MBC3,
+    mbc5: MBC5,
+
+    const Self = @This();
+
+    pub fn read_byte(self: *const Self, address: u16) u8 {
+        switch (self.*) {
+            .rom => |rom| return rom.read_byte(address),
+            .mbc1 => |mbc1| return mbc1.read_byte(address),
+            .mbc2 => |mbc2| return mbc2.read_byte(address),
+            .mbc3 => |mbc3| return mbc3.read_byte(address),
+            .mbc5 => |mbc5| return mbc5.read_byte(address),
+        }
+    }
+
+    pub fn write_byte(self: *Self, address: u16, value: u8) void {
+        switch (self.*) {
+            .rom => |*rom| rom.write_byte(address, value),
+            .mbc1 => |*mbc1| mbc1.write_byte(address, value),
+            .mbc2 => |*mbc2| mbc2.write_byte(address, value),
+            .mbc3 => |*mbc3| mbc3.write_byte(address, value),
+            .mbc5 => |*mbc5| mbc5.write_byte(address, value),
+        }
+    }
+
+    pub fn size(self: *const Self) usize {
+        switch (self.*) {
+            .rom => |*rom| return rom.size(),
+            .mbc1 => |*mbc1| return mbc1.size(),
+            .mbc2 => |*mbc2| return mbc2.size(),
+            .mbc3 => |*mbc3| return mbc3.size(),
+            .mbc5 => |*mbc5| return mbc5.size(),
+        }
+    }
+
+    pub fn save(self: *const MBC) void {
+        switch (self.*) {
+            .rom => |rom| rom.save(),
+            .mbc1 => |mbc1| mbc1.save(),
+            .mbc2 => |mbc2| mbc2.save(),
+            .mbc3 => |mbc3| mbc3.save(),
+            .mbc5 => |mbc5| mbc5.save(),
+        }
+    }
+};
+
 pub const Rom = struct {
     data: []const u8,
 
@@ -6,17 +58,17 @@ pub const Rom = struct {
         return Rom{ .data = data };
     }
 
-    pub fn read_byte(self: *Rom, address: u16) u8 {
+    pub fn read_byte(self: Rom, address: u16) u8 {
         return self.data[address];
     }
 
-    pub fn write_byte(_: *Rom, _: u16, _: u8) void {}
+    pub fn write_byte(_: *const Rom, _: u16, _: u8) void {}
 
-    pub fn size(self: *Rom) usize {
+    pub fn size(self: Rom) usize {
         return self.data.len;
     }
 
-    pub fn save(_: *Rom) void {}
+    pub fn save(_: Rom) void {}
 };
 
 pub const MBC1 = struct {
@@ -33,7 +85,7 @@ pub const MBC1 = struct {
         };
     }
 
-    pub fn read_byte(self: *MBC1, address: u16) u8 {
+    pub fn read_byte(self: MBC1, address: u16) u8 {
         switch (address) {
             0x0000...0x3FFF => return self.rom[address],
             0x4000...0x7FFF => {
@@ -70,11 +122,11 @@ pub const MBC1 = struct {
         }
     }
 
-    pub fn size(self: *MBC1) usize {
+    pub fn size(self: MBC1) usize {
         return self.rom.len;
     }
 
-    pub fn save(_: *MBC1) void {}
+    pub fn save(_: MBC1) void {}
 };
 
 pub const MBC2 = struct {
@@ -90,7 +142,7 @@ pub const MBC2 = struct {
         };
     }
 
-    pub fn read_byte(self: *MBC2, address: u16) u8 {
+    pub fn read_byte(self: MBC2, address: u16) u8 {
         switch (address) {
             0x0000...0x3FFF => return self.rom[address],
             0x4000...0x7FFF => {
@@ -131,14 +183,12 @@ pub const MBC2 = struct {
         }
     }
 
-    pub fn size(self: *MBC2) usize {
+    pub fn size(self: MBC2) usize {
         return self.rom.len;
     }
 
-    pub fn save(_: *MBC2) void {}
+    pub fn save(_: MBC2) void {}
 };
-
-const RTC = @import("real_time_clock.zig");
 
 pub const MBC3 = struct {
     rom: []const u8,
@@ -156,7 +206,7 @@ pub const MBC3 = struct {
         };
     }
 
-    pub fn read_byte(self: *MBC3, address: u16) u8 {
+    pub fn read_byte(self: MBC3, address: u16) u8 {
         switch (address) {
             0x0000...0x3FFF => return self.rom[address],
             0x4000...0x7FFF => {
@@ -218,11 +268,11 @@ pub const MBC3 = struct {
         }
     }
 
-    pub fn size(self: *MBC3) usize {
+    pub fn size(self: MBC3) usize {
         return self.rom.len;
     }
 
-    pub fn save(_: *MBC3) void {}
+    pub fn save(_: MBC3) void {}
 };
 
 pub const MBC5 = struct {
@@ -239,7 +289,7 @@ pub const MBC5 = struct {
         };
     }
 
-    pub fn read_byte(self: *MBC5, address: u16) u8 {
+    pub fn read_byte(self: MBC5, address: u16) u8 {
         switch (address) {
             0x0000...0x3FFF => return self.rom[address],
             0x4000...0x7FFF => {
@@ -276,9 +326,9 @@ pub const MBC5 = struct {
         }
     }
 
-    pub fn size(self: *MBC5) usize {
+    pub fn size(self: MBC5) usize {
         return self.rom.len;
     }
 
-    pub fn save(_: *MBC5) void {}
+    pub fn save(_: MBC5) void {}
 };
