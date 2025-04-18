@@ -1,4 +1,5 @@
 const std = @import("std");
+const MBC = @import("mbc.zig");
 
 pub const CatridgeError = error{
     FileNotFound,
@@ -21,6 +22,7 @@ pub const Catridge = struct {
     sbg_flag: bool,
     catridge_type: CatridgeType,
     size: i8,
+    mbc: MBC.MBC,
 
     pub fn init(path: []const u8, allocator: std.mem.Allocator) CatridgeError!Catridge {
         std.fs.accessAbsolute(path, .{}) catch {
@@ -37,12 +39,15 @@ pub const Catridge = struct {
         _ = file.readAll(buffer) catch unreachable;
         const cgb_flag = buffer[0x0143];
         const size = buffer[0x0148];
+        const catridge_type = get_catridge_type(buffer[0x147]);
+        const mbc = create_mbc(buffer, size, catridge_type, allocator);
         return Catridge{
-            .catridge_type = get_catridge_type(buffer[0x147]),
+            .catridge_type = catridge_type,
             .title = buffer[0x0134..0x0144].*,
             .cbg_flag = cgb_flag == 0x80 or cgb_flag == 0xC0,
             .sbg_flag = buffer[0x0146] == 0x03,
             .size = @truncate(@as(i16, size)),
+            .mbc = mbc,
         };
     }
 
@@ -56,6 +61,30 @@ pub const Catridge = struct {
             else => {
                 std.debug.print("Unsupported catridge type.", .{});
                 return CatridgeType.CartridgeNotSupported;
+            },
+        }
+    }
+
+    fn create_mbc(rom: []const u8, ram_size: usize, catridge_type: CatridgeType, allocator: std.mem.Allocator) MBC.MBC {
+        switch (catridge_type) {
+            CatridgeType.CartridgeNoMBC => {
+                return .{ .rom = MBC.Rom.init(rom) };
+            },
+            CatridgeType.CartridgeMBC1, CatridgeType.CartridgeMBC1Multi => {
+                return .{ .mbc1 = MBC.MBC1.init(rom, ram_size, allocator) };
+            },
+            CatridgeType.CartridgeMBC2 => {
+                return .{ .mbc2 = MBC.MBC2.init(rom, ram_size, allocator) };
+            },
+            CatridgeType.CartridgeMBC3 => {
+                return .{ .mbc3 = MBC.MBC3.init(rom, ram_size, null, allocator) };
+            },
+            CatridgeType.CartridgeMBC5 => {
+                return .{ .mbc5 = MBC.MBC5.init(rom, ram_size, allocator) };
+            },
+            else => {
+                std.debug.print("Unsupported catridge type.", .{});
+                return undefined;
             },
         }
     }
