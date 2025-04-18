@@ -8,7 +8,7 @@ const std = @import("std");
 
 pub fn main() !void {
     //test_cpu();
-    test_mbc();
+    //test_mbc();
     // test_real_time_clock();
     const c = try test_catridge();
     std.debug.print("Catridge {any}", .{c});
