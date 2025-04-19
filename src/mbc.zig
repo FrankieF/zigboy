@@ -12,41 +12,25 @@ pub const MBC = union(enum) {
 
     pub fn read_byte(self: *const Self, address: u16) u8 {
         switch (self.*) {
-            .rom => |rom| return rom.read_byte(address),
-            .mbc1 => |mbc1| return mbc1.read_byte(address),
-            .mbc2 => |mbc2| return mbc2.read_byte(address),
-            .mbc3 => |mbc3| return mbc3.read_byte(address),
-            .mbc5 => |mbc5| return mbc5.read_byte(address),
+            inline else => |*mbc| return mbc.read_byte(address),
         }
     }
 
     pub fn write_byte(self: *Self, address: u16, value: u8) void {
         switch (self.*) {
-            .rom => |*rom| rom.write_byte(address, value),
-            .mbc1 => |*mbc1| mbc1.write_byte(address, value),
-            .mbc2 => |*mbc2| mbc2.write_byte(address, value),
-            .mbc3 => |*mbc3| mbc3.write_byte(address, value),
-            .mbc5 => |*mbc5| mbc5.write_byte(address, value),
+            inline else => |*mbc| mbc.write_byte(address, value),
         }
     }
 
     pub fn size(self: *const Self) usize {
         switch (self.*) {
-            .rom => |*rom| return rom.size(),
-            .mbc1 => |*mbc1| return mbc1.size(),
-            .mbc2 => |*mbc2| return mbc2.size(),
-            .mbc3 => |*mbc3| return mbc3.size(),
-            .mbc5 => |*mbc5| return mbc5.size(),
+            inline else => |mbc| return mbc.size(),
         }
     }
 
     pub fn save(self: *const MBC) void {
         switch (self.*) {
-            .rom => |rom| rom.save(),
-            .mbc1 => |mbc1| mbc1.save(),
-            .mbc2 => |mbc2| mbc2.save(),
-            .mbc3 => |mbc3| mbc3.save(),
-            .mbc5 => |mbc5| mbc5.save(),
+            inline else => |mbc| mbc.save(),
         }
     }
 };
