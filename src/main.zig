@@ -7,8 +7,8 @@ const RTC = @import("real_time_clock.zig");
 const std = @import("std");
 
 pub fn main() !void {
-    //test_mbc();
-    // test_real_time_clock();
+    test_mbc();
+    test_real_time_clock();
     const c = try test_catridge();
     var cpu = test_cpu(c);
     // std.debug.print("Catridge {any}", .{c});
