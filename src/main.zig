@@ -13,21 +13,20 @@ pub fn main() !void {
     var cpu = test_cpu(c);
     // std.debug.print("Catridge {any}", .{c});
     // std.debug.print("Title {c}", .{c.title});
-    const limit = 10; //1258895;
+    const limit = 100; //1258895;
     var file = try std.fs.cwd().createFile("output.txt", .{});
     defer file.close();
     for (0..limit) |_| {
         //Format: [registers] (mem[pc] mem[pc+1] mem[pc+2] mem[pc+3])
         try print_line(&file, &cpu);
         const byte = cpu.next_byte();
+        std.debug.print("Current byte: {any}\n", .{byte});
         _ = cpu.execute(byte);
     }
     std.debug.print("Compiled ok!", .{});
 }
 
 fn print_line(file: *std.fs.File, cpu: *CPU.CPU) !void {
-    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    // const allocator = gpa.allocator();
     var buffer: [256]u8 = undefined;
     const line = try std.fmt.bufPrint(&buffer, "A: {d} F: {d} B: {d} C: {d} D; {d} E: {d} H: {d} L: {d} SP: {d} PC: {d}({d} {d} {d})\n", .{
         cpu.registers.a,
@@ -44,25 +43,8 @@ fn print_line(file: *std.fs.File, cpu: *CPU.CPU) !void {
         cpu.memory.read_byte(@addWithOverflow(cpu.pc, 2)[0]),
         cpu.memory.read_byte(@addWithOverflow(cpu.pc, 3)[0]),
     });
-    //const format = "A: {d} F: {d} B: {d} C: {d} D; {d} E: {d} H: {d} L: {d} SP: {d} PC: {d}({d} {d} {d})";
-    // const string = try std.fmt.allocPrint(allocator, format, .{
-    //     cpu.registers.a,
-    //     cpu.registers.a,
-    //     cpu.registers.b,
-    //     cpu.registers.c,
-    //     cpu.registers.d,
-    //     cpu.registers.e,
-    //     cpu.registers.h,
-    //     cpu.registers.l,
-    //     cpu.sp,
-    //     cpu.pc,
-    //     cpu.memory.read_byte(@addWithOverflow(cpu.pc, 1)[0]),
-    //     cpu.memory.read_byte(@addWithOverflow(cpu.pc, 2)[0]),
-    //     cpu.memory.read_byte(@addWithOverflow(cpu.pc, 3)[0]),
-    // });
-    //defer allocator.free(string);
+    //std.debug.print("Wrote line!\nCurrent line: {any}\n\n", .{line});
     try file.writeAll(line);
-    //std.debug.print("{s}\n", .{line});
 }
 
 fn test_real_time_clock() void {
