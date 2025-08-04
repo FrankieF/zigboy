@@ -1,3 +1,4 @@
+const std = @import("std");
 const Memory = @import("memory.zig").Memory;
 pub const Registers = struct {
     a: u8,
@@ -8,13 +9,25 @@ pub const Registers = struct {
     h: u8,
     l: u8,
 
+    pub fn init() Registers {
+        return Registers{
+            .a = 0x01,
+            .b = 0x00,
+            .c = 0x13,
+            .d = 0x00,
+            .e = 0xD8,
+            .h = 0x01,
+            .l = 0x4D,
+        };
+    }
+
     pub fn get_bc(self: *Registers) u16 {
         const _u16: u16 = @as(u16, self.b) << 8 | self.c;
         return _u16;
     }
 
     pub fn set_bc(self: *Registers, value: u16) void {
-        self.b = @truncate(value & 0xFF00 >> 8);
+        self.b = @truncate((value & 0xFF00) >> 8);
         self.c = @truncate(value & 0xFF);
     }
 
@@ -23,7 +36,7 @@ pub const Registers = struct {
     }
 
     pub fn set_hl(self: *Registers, value: u16) void {
-        self.h = @truncate(value & 0xFF00 >> 8);
+        self.h = @truncate((value & 0xFF00) >> 8);
         self.l = @truncate(value & 0xFF);
     }
 
@@ -32,7 +45,7 @@ pub const Registers = struct {
     }
 
     pub fn set_de(self: *Registers, value: u16) void {
-        self.d = @truncate(value & 0xFF00 >> 8);
+        self.d = @truncate((value & 0xFF00) >> 8);
         self.e = @truncate(value & 0xFF);
     }
 };
@@ -43,6 +56,15 @@ pub const Flags = struct {
     half_carry: bool, // H flag
     carry: bool, // C flag
 
+    pub fn init() Flags {
+        return Flags{
+            .carry = true,
+            .half_carry = true,
+            .subtract = false,
+            .zero = true,
+        };
+    }
+
     pub fn set(self: *Flags, zero: bool, subtract: bool, half_carry: bool, carry: bool) void {
         self.zero = zero;
         self.subtract = subtract;
@@ -51,12 +73,17 @@ pub const Flags = struct {
     }
 };
 
+const STEP_TIME: u32 = 16;
+const STEP_CYCLES: u32 = @intFromFloat(@as(f64, @floatFromInt(STEP_TIME)) / (1000.0 / 4194304.0));
+
 pub const CPU = struct {
     registers: Registers,
     flags: Flags,
     sp: u16,
     pc: u16,
+    step_cycles: u32,
     halted: bool,
+    interruped_enabled: bool,
     disable_interrupt: u2,
     enable_interrupt: u2,
     memory: Memory,
@@ -65,9 +92,11 @@ pub const CPU = struct {
         return CPU{
             .registers = registers,
             .flags = flags,
-            .sp = 0,
-            .pc = 0,
+            .sp = 0xFFFE,
+            .pc = 0x100,
+            .step_cycles = 0,
             .halted = false,
+            .interruped_enabled = true,
             .disable_interrupt = 0,
             .enable_interrupt = 0,
             .memory = memory,
@@ -75,19 +104,21 @@ pub const CPU = struct {
     }
 
     pub fn pop_stack(self: *CPU) u16 {
-        const value = self.memory.read_word(self.pc);
-        self.pc += 2;
+        std.debug.print("\nSP is : {X}", .{self.sp});
+        const value = self.memory.read_word(self.sp);
+        std.debug.print("\nWord is : {X}", .{value});
+        self.sp += 2;
         return value;
     }
 
     pub fn push_stack(self: *CPU, value: u16) void {
-        self.pc -= 2;
+        self.sp -= 2;
         self.memory.write_word(self.pc, value);
     }
 
     pub fn next_byte(self: *CPU) u8 {
         const byte = self.memory.read_byte(self.pc);
-        self.pc += 1;
+        self.pc = self.pc +% 1;
         return byte;
     }
 
@@ -273,11 +304,84 @@ pub const CPU = struct {
     }
 
     pub fn jr(self: *CPU, value: u8) void {
-        const value16 = @as(u16, value);
-        self.pc += value16;
+        const ipc32 = @as(i32, @intCast(self.pc));
+        const ivalue = @as(i8, @bitCast(value));
+        self.pc = @as(u16, @intCast(ipc32 + ivalue));
     }
 
-    const std = @import("std");
+    pub fn step(self: *CPU) u32 {
+        if (self.step_cycles > STEP_CYCLES) {
+            self.step_cycles -= STEP_CYCLES;
+            // todo implement rest of this
+        }
+        const cycles = self.tick();
+        self.step_cycles += cycles;
+        return cycles;
+    }
+
+    pub fn tick(self: *CPU) u32 {
+        self.update_interrupts();
+        const interrupt_cycles = self.check_interrupts();
+        if (interrupt_cycles != 0) {
+            return interrupt_cycles;
+        }
+
+        if (self.halted) {
+            return 4;
+        }
+        const opcode = self.next_byte();
+        return self.execute(opcode);
+    }
+
+    pub fn check_interrupts(self: *CPU) u32 {
+        if (!self.halted and !self.interruped_enabled) {
+            return 0;
+        }
+        const interrupt_f = self.memory.read_byte(0xFFFF);
+        const interrupt_e = self.memory.read_byte(0xFF0F);
+        const interrupts = interrupt_f & interrupt_e;
+        if (interrupts == 0) {
+            return 0;
+        }
+        self.halted = false;
+        if (!self.interruped_enabled) {
+            return 0;
+        }
+        self.interruped_enabled = false;
+        self.handle_interrupts(interrupts);
+        return 16;
+    }
+
+    pub fn handle_interrupts(self: *CPU, interrupt: u8) void {
+        std.debug.print("Interrupt happened.", .{});
+        const trailing_zeros = @ctz(interrupt);
+        var itr = interrupt;
+        const one: u16 = 1;
+        itr &= @intFromBool((one << trailing_zeros) != 1);
+        self.memory.write_byte(0xFF0F, itr);
+        self.push_stack(self.pc);
+        self.pc = 0x0040 | (@as(u16, trailing_zeros) << 3);
+    }
+
+    pub fn update_interrupts(self: *CPU) void {
+        if (self.disable_interrupt == 2) {
+            self.disable_interrupt = 1;
+        } else if (self.disable_interrupt == 1) {
+            self.interruped_enabled = false;
+            self.disable_interrupt = 0;
+        } else {
+            self.disable_interrupt = 0;
+        }
+        if (self.enable_interrupt == 2) {
+            self.enable_interrupt = 1;
+        } else if (self.enable_interrupt == 1) {
+            self.interruped_enabled = true;
+            self.enable_interrupt = 0;
+        } else {
+            self.enable_interrupt = 0;
+        }
+    }
+
     pub fn execute(self: *CPU, opcode: u8) u32 {
         switch (opcode) {
             0x00 => { // NOP
@@ -472,10 +576,10 @@ pub const CPU = struct {
                 self.add16(self.registers.get_hl());
                 return 8;
             },
-            0x2A => { // LA A, [HL+]
+            0x2A => { // LD A, [HL+]
                 const hl = self.registers.get_hl();
                 self.registers.a = self.memory.read_byte(hl);
-                self.registers.set_hl(@addWithOverflow(hl, 1)[0]);
+                self.registers.set_hl(hl +% 1);
                 return 8;
             },
             0x2B => { // DEC HL
@@ -616,11 +720,11 @@ pub const CPU = struct {
                 return 8;
             },
             0x47 => { // LD B, A
-                self.registers.b = self.registers.c;
+                self.registers.b = self.registers.a;
                 return 4;
             },
             0x48 => { // LD C, B
-                self.registers.c = self.registers.c;
+                self.registers.c = self.registers.b;
                 return 4;
             },
             0x49 => { // LD C, C
@@ -832,6 +936,7 @@ pub const CPU = struct {
                 return 4;
             },
             0x7D => { // LD A, L
+                self.registers.a = self.registers.l;
                 return 4;
             },
             0x7E => { // LD A, [HL]
@@ -1186,7 +1291,7 @@ pub const CPU = struct {
             },
             0xCD => { // CALL a16
                 const word = self.next_word();
-                self.push_stack(word);
+                self.push_stack(self.pc);
                 self.pc = word;
                 return 24;
             },
