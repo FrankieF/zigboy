@@ -73,8 +73,11 @@ pub const MBC1 = struct {
         switch (address) {
             0x0000...0x3FFF => return self.rom[address],
             0x4000...0x7FFF => {
-                const offset = 0x4000 * @as(u16, self.rom_bank) * 8192;
-                return self.rom[offset];
+                const offset = 0x4000 * @as(usize, self.rom_bank);
+                if (address == 0x4244) {
+                    //std.debug.print("\nRom Value: {X}", .{self.rom});
+                }
+                return self.rom[offset + (address - 0x4000)];
             },
             0xA000...0xBFFF => {
                 if (!self.ram_enabled) {
@@ -90,10 +93,10 @@ pub const MBC1 = struct {
 
     pub fn write_byte(self: *MBC1, address: u16, value: u8) void {
         switch (address) {
-            0x000...0x1FFF => self.ram_enabled = value & 0x0F == 0x0A,
+            0x000...0x1FFF => self.ram_enabled = (value & 0x0F) == 0x0A,
             0x2000...0x3FFF => {
                 const n = if (value == 0) 1 else value;
-                self.rom_bank = self.rom_bank & 0b01100000 | n & 0b00011111;
+                self.rom_bank = (self.rom_bank & 0b01100000) | (n & 0b00011111);
             },
             0x4000...0x5FFF => {
                 if (self.default_mode) {
