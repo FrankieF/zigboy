@@ -13,24 +13,33 @@ pub fn main() !void {
     var cpu = test_cpu(c);
     // std.debug.print("Catridge {any}", .{c});
     // std.debug.print("Title {c}", .{c.title});
-    const limit = 100; //1258895;
+    const limit = 2335; //1258895;
     var file = try std.fs.cwd().createFile("output.txt", .{});
     defer file.close();
     for (0..limit) |_| {
         //Format: [registers] (mem[pc] mem[pc+1] mem[pc+2] mem[pc+3])
         try print_line(&file, &cpu);
-        const byte = cpu.next_byte();
-        std.debug.print("Current byte: {any}\n", .{byte});
-        _ = cpu.execute(byte);
+        const cycles = cpu.step();
+        cpu.memory.update(cycles);
     }
     std.debug.print("Compiled ok!", .{});
 }
 
 fn print_line(file: *std.fs.File, cpu: *CPU.CPU) !void {
     var buffer: [256]u8 = undefined;
-    const line = try std.fmt.bufPrint(&buffer, "A: {d} F: {d} B: {d} C: {d} D; {d} E: {d} H: {d} L: {d} SP: {d} PC: {d}({d} {d} {d})\n", .{
+    var f: u8 = 0;
+    f |= 0x80 & (@as(u8, @intFromBool(cpu.flags.zero)) << 7);
+    // std.debug.print("F: {any}, {any}\n", .{ f, @as(u8, @intFromBool(cpu.flags.zero)) });
+    f |= 0x40 & (@as(u8, @intFromBool(cpu.flags.subtract)) << 6);
+    // std.debug.print("F: {any}, {any}\n", .{ f, @as(u8, @intFromBool(cpu.flags.subtract)) });
+    f |= 0x20 & (@as(u8, @intFromBool(cpu.flags.half_carry)) << 5);
+    // std.debug.print("F: {any}, {any}\n", .{ f, @as(u8, @intFromBool(cpu.flags.half_carry)) });
+    f |= 0x10 & (@as(u8, @intFromBool(cpu.flags.carry)) << 4);
+    // std.debug.print("F: {any}, {any}\n", .{ f, @as(u8, @intFromBool(cpu.flags.carry)) });
+    //std.debug.print("A is: {X:0>2}\n", .{cpu.registers.a});
+    const line = try std.fmt.bufPrint(&buffer, "A:{X:0>2} F:{X:0>2} B:{X:0>2} C:{X:0>2} D:{X:0>2} E:{X:0>2} H:{X:0>2} L:{X:0>2} SP:{X:0>4} PC:{X:0>4} PCMEM:{X:0>2},{X:0>2},{X:0>2},{X:0>2}\n", .{
         cpu.registers.a,
-        cpu.registers.a,
+        f,
         cpu.registers.b,
         cpu.registers.c,
         cpu.registers.d,
@@ -39,6 +48,7 @@ fn print_line(file: *std.fs.File, cpu: *CPU.CPU) !void {
         cpu.registers.l,
         cpu.sp,
         cpu.pc,
+        cpu.memory.read_byte(@addWithOverflow(cpu.pc, 0)[0]),
         cpu.memory.read_byte(@addWithOverflow(cpu.pc, 1)[0]),
         cpu.memory.read_byte(@addWithOverflow(cpu.pc, 2)[0]),
         cpu.memory.read_byte(@addWithOverflow(cpu.pc, 3)[0]),
@@ -48,8 +58,8 @@ fn print_line(file: *std.fs.File, cpu: *CPU.CPU) !void {
 }
 
 fn test_real_time_clock() void {
-    const rtc = RTC.RealTimeClock.init(null);
-    std.debug.print("Zero {any}", .{rtc.zero});
+    //const rtc = RTC.RealTimeClock.init(null);
+    //std.debug.print("Zero {any}", .{rtc.zero});
     // _ = rtc.read_byte(1);
     //rtc.write_byte(1, 1);
 }
@@ -81,27 +91,14 @@ fn test_mbc() void {
 
 fn test_catridge() Catridge.CatridgeError!Catridge.Catridge {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const path = "C:\\Users\\frank\\source\\repos\\zigboy\\gb-test-roms-master\\cpu_instrs\\cpu_instrs.gb";
+    const path = "C:\\Users\\frank\\source\\repos\\zigboy\\gb-test-roms-master\\cpu_instrs\\individual\\02-interrupts.gb";
     const allocator = gpa.allocator();
     return Catridge.Catridge.init(path, allocator);
 }
 
 fn test_cpu(catridge: Catridge.Catridge) CPU.CPU {
     const memory: Memory.Memory = Memory.Memory.init(catridge);
-    const registers: CPU.Registers = .{
-        .a = 0,
-        .b = 0,
-        .c = 0,
-        .d = 0,
-        .e = 0,
-        .h = 0,
-        .l = 0,
-    };
-    const flags: CPU.Flags = .{
-        .carry = false,
-        .half_carry = false,
-        .subtract = false,
-        .zero = false,
-    };
+    const registers = CPU.Registers.init();
+    const flags = CPU.Flags.init();
     return CPU.CPU.init(registers, flags, memory);
 }
