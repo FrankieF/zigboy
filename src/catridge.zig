@@ -66,7 +66,7 @@ pub const Catridge = struct {
         //defer allocator.free(buffer);
         _ = file.readAll(buffer) catch unreachable;
         const cgb_flag = buffer[0x0143];
-        const size = buffer[0x0148];
+        const size = buffer[0x0149];
         const catridge_type = get_catridge_type(buffer[0x147]);
         const mbc = create_mbc(buffer, size, catridge_type, allocator);
         return Catridge{
