@@ -4,7 +4,9 @@ const Memory = @import("memory.zig");
 const Catridge = @import("catridge.zig");
 const MBC = @import("mbc.zig");
 const RTC = @import("real_time_clock.zig");
+const GPU = @import("gpu.zig");
 const std = @import("std");
+const Interrupt = @import("interrupt.zig");
 
 pub fn main() !void {
     test_mbc();
@@ -15,6 +17,8 @@ pub fn main() !void {
     // std.debug.print("Title {c}", .{c.title});
     const limit = 2335; //1258895;
     var file = try std.fs.cwd().createFile("output.txt", .{});
+    const gpu = GPU.GPU.init(Interrupt.Interrupt.init());
+    _ = gpu;
     defer file.close();
     for (0..limit) |_| {
         //Format: [registers] (mem[pc] mem[pc+1] mem[pc+2] mem[pc+3])
