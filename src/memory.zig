@@ -12,18 +12,19 @@ pub const Memory = struct {
     catridge: Catridge,
     timer: Timer,
     interrupt_enabled: u8,
-    interrupt: Interrupt,
+    interrupt: *Interrupt,
 
     pub fn init(catridge: Catridge) Memory {
         const high_ram = [_]u8{0} ** HIGH_RAM_LENGTH;
         const work_ram = [_]u8{0} ** WORK_RAM_LENGTH;
+        var interrupt = Interrupt.init();
         var memory = Memory{
             .high_ram = high_ram,
             .work_ram = work_ram,
             .catridge = catridge,
-            .timer = Timer.init(Interrupt.init()),
+            .timer = Timer.init(&interrupt),
             .interrupt_enabled = 0,
-            .interrupt = Interrupt.init(),
+            .interrupt = &interrupt,
         };
         memory.initialiseMemory();
         return memory;

@@ -8,9 +8,9 @@ pub const Timer = struct {
     enable: bool,
     divide_clock: Clock,
     modulo_clock: Clock,
-    interrupt: Interrupt,
+    interrupt: *Interrupt,
 
-    pub fn init(interrupt: Interrupt) Timer {
+    pub fn init(interrupt: *Interrupt) Timer {
         return Timer{
             .divide_clock = Clock.init(256),
             .modulo_clock = Clock.init(1024),

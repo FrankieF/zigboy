@@ -15,7 +15,7 @@ pub fn main() !void {
     var cpu = test_cpu(c);
     // std.debug.print("Catridge {any}", .{c});
     // std.debug.print("Title {c}", .{c.title});
-    const limit = 2335; //1258895;
+    const limit = 1258895;
     var file = try std.fs.cwd().createFile("output.txt", .{});
     const gpu = GPU.GPU.init(Interrupt.Interrupt.init());
     _ = gpu;
@@ -95,7 +95,7 @@ fn test_mbc() void {
 
 fn test_catridge() Catridge.CatridgeError!Catridge.Catridge {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const path = "C:\\Users\\frank\\source\\repos\\zigboy\\gb-test-roms-master\\cpu_instrs\\individual\\02-interrupts.gb";
+    const path = "C:\\Users\\frank\\source\\repos\\zigboy\\gb-test-roms-master\\cpu_instrs\\individual\\03-op sp,hl.gb";
     const allocator = gpa.allocator();
     return Catridge.Catridge.init(path, allocator);
 }
