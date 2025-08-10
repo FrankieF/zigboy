@@ -7,6 +7,9 @@ const RTC = @import("real_time_clock.zig");
 const GPU = @import("gpu.zig");
 const std = @import("std");
 const Interrupt = @import("interrupt.zig");
+const LCD = @import("lcd_control.zig");
+const Palette = @import("palette.zig");
+const Stat = @import("stat.zig");
 
 pub fn main() !void {
     test_mbc();
@@ -19,12 +22,25 @@ pub fn main() !void {
     var file = try std.fs.cwd().createFile("output.txt", .{});
     const gpu = GPU.GPU.init(Interrupt.Interrupt.init());
     _ = gpu;
+    var lcd = LCD.LCD.init();
+    _ = lcd.read_byte(0xFF40);
+    lcd.write_bye(0xFF40, 1);
+    var palette = Palette.Palette.init();
+    _ = palette.get_shade(0);
+    _ = palette.read_byte();
+    palette.set_colors(.{ 0, 0, 0, 0 });
+    palette.update();
+    palette.write_byte(1);
+    var stat = Stat.Stat.init();
+    _ = stat.read_byte(0xFF41);
+    stat.write_byte(0xFF41, 0b11110000);
     defer file.close();
     for (0..limit) |_| {
         //Format: [registers] (mem[pc] mem[pc+1] mem[pc+2] mem[pc+3])
         try print_line(&file, &cpu);
         const cycles = cpu.step();
         cpu.memory.update(cycles);
+        break;
     }
     std.debug.print("Compiled ok!", .{});
 }

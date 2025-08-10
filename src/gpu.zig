@@ -1,4 +1,5 @@
 const Interrupt = @import("interrupt.zig").Interrupt;
+const LCD = @import("lcd_control.zig").LCD;
 
 pub const Sprite = struct {
     y: i16,
@@ -22,7 +23,7 @@ pub const GPU = struct {
     oam: [OAM_SIZE]u8,
     pixels: [SCREEN_HEIGHT * SCREEN_WIDTH]u32,
     updated: bool,
-    //lcdc: LCDC,
+    lcd: LCD,
     //stat: STAT,
     h_blank: bool,
     scroll_y: u8,
@@ -42,7 +43,7 @@ pub const GPU = struct {
         return GPU{
             .vram = [_]u8{0} ** VRAM_SIZE,
             .oam = [_]u8{0} ** OAM_SIZE,
-            // lcdc: LCDC.new
+            .lcd = LCD.init(),
             // stat = stat.new
             .h_blank = false,
             .scroll_y = 0,
