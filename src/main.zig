@@ -10,6 +10,7 @@ const Interrupt = @import("interrupt.zig");
 const LCD = @import("lcd_control.zig");
 const Palette = @import("palette.zig");
 const Stat = @import("stat.zig");
+const Controller = @import("controller.zig");
 
 pub fn main() !void {
     test_mbc();
@@ -34,6 +35,11 @@ pub fn main() !void {
     var stat = Stat.Stat.init();
     _ = stat.read_byte(0xFF41);
     stat.write_byte(0xFF41, 0b11110000);
+    var inter = Interrupt.Interrupt.init();
+    var keypad = Controller.KeyPad.init(&inter);
+    keypad.press(Controller.Key.A);
+    keypad.write_byte(0xFF00, 64);
+    _ = keypad.read_byte(0xFF00);
     defer file.close();
     for (0..limit) |_| {
         //Format: [registers] (mem[pc] mem[pc+1] mem[pc+2] mem[pc+3])
