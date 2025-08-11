@@ -101,7 +101,7 @@ pub const Memory = struct {
                 self.work_ram[address - 0xE000] = value;
             },
             0xFE00...0xFE9F => self.gpu.write_bye(address, value),
-            0xFF00 => self.keypad.write_bye(address, value),
+            0xFF00 => self.keypad.write_byte(address, value),
             0xFF01...0xFF02 => {
                 // write to serial
             },

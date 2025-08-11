@@ -47,9 +47,9 @@ pub const GPU = struct {
     sprite_patlette_1: Palette,
     background_priority: [SCREEN_WIDTH]Prioriy,
     dots: u32,
-    interrupt: Interrupt,
+    interrupt: *Interrupt,
 
-    pub fn init(interrupt: Interrupt) GPU {
+    pub fn init(interrupt: *Interrupt) GPU {
         return GPU{
             .vram = [_]u8{0} ** VRAM_SIZE,
             .oam = [_]u8{0} ** OAM_SIZE,
@@ -87,12 +87,12 @@ pub const GPU = struct {
             0xFF43 => return self.scroll_x,
             0xFF44 => return self.line_y,
             0xFF45 => return self.line_y_compare,
-            0xFF47 => return self.background_palette.read_byte(address),
-            0xFF48 => return self.sprite_patlette_0.read_byte(address),
-            0xFF49 => return self.sprite_patlette_1.read_byte(address),
+            0xFF47 => return self.background_palette.read_byte(),
+            0xFF48 => return self.sprite_patlette_0.read_byte(),
+            0xFF49 => return self.sprite_patlette_1.read_byte(),
             0xFF4A => return self.window_y,
             0xFF4B => return self.window_x,
-            _ => {
+            else => {
                 std.debug.print("Address: {X} is not readable for GPU.", .{address});
                 unreachable;
             },
@@ -122,12 +122,12 @@ pub const GPU = struct {
             0xFF43 => self.scroll_x = value,
             0xFF44 => {}, // line_y is read only
             0xFF45 => self.line_y_compare = value,
-            0xFF47 => self.background_palette.write_byte(address, value),
-            0xFF48 => self.sprite_patlette_0.write_byte(address, value),
-            0xFF49 => self.sprite_patlette_1.write_byte(address, value),
+            0xFF47 => self.background_palette.write_byte(value),
+            0xFF48 => self.sprite_patlette_0.write_byte(value),
+            0xFF49 => self.sprite_patlette_1.write_byte(value),
             0xFF4A => self.window_y = value,
             0xFF4B => self.window_x = value,
-            _ => {
+            else => {
                 std.debug.print("Address: {X} is not writeable for GPU.", .{address});
                 unreachable;
             },
@@ -182,18 +182,18 @@ pub const GPU = struct {
     fn switch_mode(self: *GPU, mode: StatMode) void {
         self.stat.mode = mode;
         const interrupt = switch (self.stat.mode) {
-            StatMode.HBlank => {
+            .HBlank => hblank: {
                 self.render_scanline();
                 self.h_blank = true;
-                return self.stat.hblank_interrupt;
+                break :hblank self.stat.hblank_interrupt;
             },
-            StatMode.VBlank => {
+            .VBlank => vblank: {
                 self.interrupt.set_interrupt(InterruptSource.VBLank);
                 self.updated = true;
-                return self.stat.vblank_interrupt;
+                break :vblank self.stat.vblank_interrupt;
             },
-            StatMode.OAMRead => return self.stat.oam_interrupt,
-            StatMode.VRAMRead => return false,
+            .OAMRead => self.stat.oam_interrupt,
+            .VRAMRead => false,
         };
         if (interrupt) {
             self.interrupt.set_interrupt(InterruptSource.STAT);
@@ -208,14 +208,15 @@ pub const GPU = struct {
     fn render_background(self: *GPU) void {
         const is_window_y = self.lcd.window_enable and self.line_y >= self.window_y;
         const background_y = self.line_y +% self.scroll_y;
-        for (0..SCREEN_WIDTH) |x| {
+        for (0..SCREEN_WIDTH) |_x| {
+            const x: u8 = @intCast(_x);
             const is_window_x = self.lcd.window_enable and x >= self.window_x -% 7;
             const is_window = is_window_x and is_window_y;
-            const background_x = x +% self.scroll_x;
-            const tile_address = undefined;
+            const background_x: u8 = x +% self.scroll_x;
+            var tile_address: u16 = 0;
             if (is_window) {
                 const offset_y = self.line_y +% self.window_y;
-                const offset_x = x -% (self.window_x -% 7);
+                const offset_x: u8 = x -% (self.window_x -% 7);
                 tile_address = get_address(self.lcd.window_tilemap, offset_x, offset_y);
             } else {
                 tile_address = get_address(self.lcd.background_tilemap, background_x, background_y);
@@ -224,10 +225,11 @@ pub const GPU = struct {
             const tile_base_address = self.get_tile_address(tile);
             const tile_offset: u16 = if (is_window) ((self.line_y - self.window_y) % 8) * 2 else (background_y % 8) * 2;
             const tile_data_address = tile_base_address + tile_offset;
-            const tile_data: [2]u8 = [_]u8{ self.read_bye(tile_data_address), self.read_bye(tile_data_address + 1) };
+            const tile_data: [2]u8 = [_]u8{ self.read_byte(tile_data_address), self.read_byte(tile_data_address + 1) };
             const x_bit: u8 = if (is_window) (self.window_x -% x) % 8 else 7 - (background_x % 8);
-            const color_number_left = tile_data[0] and (@as(u8, 1) << x_bit) > 0;
-            const color_number_right = if (tile_data[1] & (@as(u8, 1) << x_bit) > 0) 2 else 0;
+            const x_bit_u3: u3 = @intCast(x_bit);
+            const color_number_left: u8 = @intFromBool((tile_data[0] & (@as(u8, 1) << x_bit_u3)) > 0);
+            const color_number_right: u8 = if (tile_data[1] & (@as(u8, 1) << x_bit_u3) > 0) 2 else 0;
             const color_number = color_number_left | color_number_right;
             self.background_priority[@as(usize, x)] = if (color_number == 0) Prioriy.Color0 else Prioriy.None;
         }
@@ -237,7 +239,7 @@ pub const GPU = struct {
         const line = @as(i16, self.line_y);
         const size = @as(i16, self.lcd.sprite_size);
         // sprites with a lower index have a lower priority
-        var index = 39;
+        var index: u8 = 39;
         while (index >= 0) : (index -= 1) {
             const sprite = self.fetch_sprite(index);
             if (line < sprite.y or line >= sprite.y + size) {
@@ -245,18 +247,21 @@ pub const GPU = struct {
             }
             const tile_base_address = 0x8000 + (@as(u16, sprite.tile_number) * 16);
             const tile_offset = if (sprite.y_flip) size - 1 - (line - sprite.y) else line - sprite.y;
-            const tile_data_address = tile_base_address + (tile_offset * 2);
+            const tile_offset_u16: u16 = @intCast(tile_offset);
+            const tile_data_address = tile_base_address + (tile_offset_u16 * 2);
             const tile_data: [2]u8 = [_]u8{
                 self.read_byte(tile_data_address),
                 self.read_byte(tile_data_address + 1),
             };
             // set each pixel
-            for (0..8) |x| {
+            for (0..8) |_x| {
+                const x: u8 = @intCast(_x);
                 const pixel_x = sprite.x + x;
                 if (pixel_x < 0 or pixel_x >= 160) continue;
                 const x_bit = if (sprite.x_flip) x else 7 - x;
-                const color_index_left = tile_data[0] and (@as(u8, 1) << x_bit) > 0;
-                const color_index_right = if (tile_data[1] & (@as(u8, 1) << x_bit) > 0) 2 else 0;
+                const x_bit_u3: u3 = @intCast(x_bit);
+                const color_index_left: u3 = @intFromBool((tile_data[0] & (@as(u8, 1) << x_bit_u3)) > 0);
+                const color_index_right: u3 = if (tile_data[1] & (@as(u8, 1) << x_bit_u3) > 0) 2 else 0;
                 const color_index = color_index_left | color_index_right;
                 // Skip transparent pixels
                 if (color_index == 0) {
@@ -264,10 +269,11 @@ pub const GPU = struct {
                 }
                 const color = if (sprite.is_palette_1) self.sprite_patlette_1.get_shade(color_index) else self.sprite_patlette_0.get_shade(color_index);
                 // Skip if background has prioirty
-                if (sprite.below_background and self.background_priority[sprite.x + x] != Prioriy.Color0) {
+                const priority_index: usize = @intCast(sprite.x + x);
+                if (sprite.below_background and self.background_priority[priority_index] != Prioriy.Color0) {
                     continue;
                 }
-                self.set_pixel(pixel_x, color);
+                self.set_pixel(@intCast(pixel_x), color);
             }
         }
     }
@@ -278,7 +284,7 @@ pub const GPU = struct {
         const x = @as(i16, self.read_byte(address + 1)) - 8;
         const bits = self.read_byte(address + 3);
         const tile_number_byte = self.read_byte(address + 2);
-        const tile_number_sprite_size = if (self.lcd.sprite_size == 16) 0xFE else 0xFF;
+        const tile_number_sprite_size: u8 = if (self.lcd.sprite_size == 16) 0xFE else 0xFF;
         return Sprite{
             .y = y,
             .x = x,
@@ -301,8 +307,8 @@ pub const GPU = struct {
     }
 
     fn set_pixel(self: *GPU, x: u16, color: u32) void {
-        const start: u16 = (self.line_y * SCREEN_WIDTH + x) * 4;
-        var rgba: [3]u8 = undefined;
+        const start: u32 = (self.line_y * SCREEN_WIDTH + x) * 4;
+        var rgba: [4]u8 = undefined;
         const shift: u4 = 8;
         const color_value = color << shift;
         std.mem.writeInt(u32, rgba[0..], color_value, .big);
@@ -324,7 +330,7 @@ pub const GPU = struct {
                     previous_colors[1] => self.set_pixel(x, colors[1]),
                     previous_colors[2] => self.set_pixel(x, colors[2]),
                     previous_colors[3] => self.set_pixel(x, colors[3]),
-                    _ => unreachable,
+                    else => unreachable,
                 }
             }
         }
@@ -347,10 +353,10 @@ pub const GPU = struct {
     }
 
     fn get_tile_address(self: *GPU, tile_numer: u8) u16 {
-        const offset: u16 = 0x9000;
-        switch (self.lcd.background_tilemap) {
-            0x8000 => return 0x8000 + tile_numer,
-            _ => return (offset +% tile_numer) *% 16,
+        if (self.lcd.background_tilemap == 0x8000) {
+            return 0x8000 + @as(u16, tile_numer);
         }
+        const offset: u16 = 0x9000;
+        return (offset +% tile_numer) *% 16;
     }
 };
