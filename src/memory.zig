@@ -2,6 +2,8 @@ const std = @import("std");
 const Catridge = @import("catridge.zig").Catridge;
 const Timer = @import("timer.zig").Timer;
 const Interrupt = @import("interrupt.zig").Interrupt;
+const GPU = @import("gpu.zig").GPU;
+const Controller = @import("controller.zig");
 
 const HIGH_RAM_LENGTH = 127;
 const WORK_RAM_LENGTH = 8192;
@@ -13,6 +15,8 @@ pub const Memory = struct {
     timer: Timer,
     interrupt_enabled: u8,
     interrupt: *Interrupt,
+    gpu: GPU,
+    keypad: Controller.KeyPad,
 
     pub fn init(catridge: Catridge) Memory {
         const high_ram = [_]u8{0} ** HIGH_RAM_LENGTH;
@@ -25,6 +29,8 @@ pub const Memory = struct {
             .timer = Timer.init(&interrupt),
             .interrupt_enabled = 0,
             .interrupt = &interrupt,
+            .gpu = GPU.init(&interrupt),
+            .keypad = Controller.KeyPad.init(&interrupt),
         };
         memory.initialiseMemory();
         return memory;
@@ -32,16 +38,14 @@ pub const Memory = struct {
 
     pub fn update(self: *Memory, cycles: u32) void {
         self.timer.update(cycles);
-        //self.gpu.update(cycles);
+        self.gpu.update(cycles);
         //self.audio.update(cycles);
     }
 
     pub fn read_byte(self: *Memory, address: u16) u8 {
         return switch (address) {
             0x000...0x7FFF => return self.catridge.read_byte(address),
-            0x8000...0x9FFF => { // return self.gpu.read_byte(address);
-                return 0;
-            },
+            0x8000...0x9FFF => return self.gpu.read_byte(address),
             0xA000...0xBFFF => return self.catridge.read_byte(address),
             0xC000...0xDFFF => { // work ram 8 kb
                 const index: u16 = address - 0xC000;
@@ -50,15 +54,8 @@ pub const Memory = struct {
             0xE000...0xEFFF => { // work ram 8 kb
                 return self.work_ram[address - 0xE000];
             },
-            0xFE00...0xFE9F => {
-                // return self.gpu.read_byte(address);
-                return 0;
-            },
-            0xFF00 => {
-                std.debug.print("Memory address[{d}] is not implemented yet.", .{address});
-                return 0;
-                // read from keypad
-            },
+            0xFE00...0xFE9F => return self.gpu.read_byte(address),
+            0xFF00 => self.keypad.read_byte(address),
             0xFF01...0xFF02 => {
                 std.debug.print("Memory address[{d}] is not implemented yet.", .{address});
                 return 0;
@@ -71,11 +68,7 @@ pub const Memory = struct {
                 return 0;
                 // read audio byte
             },
-            0xFF40...0xFF4B => {
-                std.debug.print("Memory address[{d}] is not implemented yet.", .{address});
-                return 0;
-                // read gpu
-            },
+            0xFF40...0xFF4B => self.gpu.read_byte(address),
             0xFF80...0xFFFE => return self.high_ram[address - 0xFF80],
             0xFFFF => return self.interrupt_enabled,
             else => {
@@ -96,9 +89,7 @@ pub const Memory = struct {
     pub fn write_byte(self: *Memory, address: u16, value: u8) void {
         switch (address) {
             0x0000...0x7FFF => self.catridge.write_byte(address, value),
-            0x8000...0x9FFF => {
-                // write to gpu
-            },
+            0x8000...0x9FFF => self.gpu.write_bye(address, value),
             0xA000...0xBFFF => self.catridge.write_byte(address, value),
             0xC000...0xDFFF => { // work ram 8 kb
                 if ((address - 0xC000) > 8180) {
@@ -109,12 +100,8 @@ pub const Memory = struct {
             0xE000...0xEFFF => {
                 self.work_ram[address - 0xE000] = value;
             },
-            0xFE00...0xFE9F => {
-                // write to gpu
-            },
-            0xFF00 => {
-                // write to keypad
-            },
+            0xFE00...0xFE9F => self.gpu.write_bye(address, value),
+            0xFF00 => self.keypad.write_bye(address, value),
             0xFF01...0xFF02 => {
                 // write to serial
             },
@@ -123,15 +110,11 @@ pub const Memory = struct {
             0xFF10...0xFF3F => {
                 // write to audio
             },
-            0xFF40...0xFF45 => {
-                // write to gpu
-            },
+            0xFF40...0xFF45 => self.gpu.write_bye(address, value),
             0xFF46 => {
                 // dma transfer
             },
-            0xFF47...0xFf4B => {
-                // write to gpu
-            },
+            0xFF47...0xFf4B => self.gpu.write_bye(address, value),
             0xFF80...0xFFFE => {
                 self.high_ram[address - 0xFF80] = value;
             },
