@@ -11,6 +11,11 @@ const LCD = @import("lcd_control.zig");
 const Palette = @import("palette.zig");
 const Stat = @import("stat.zig");
 const Controller = @import("controller.zig");
+const Serial = @import("serial.zig").Serial;
+
+pub fn callback(value: u8) void {
+    _ = value;
+}
 
 pub fn main() !void {
     test_mbc();
@@ -21,7 +26,8 @@ pub fn main() !void {
     // std.debug.print("Title {c}", .{c.title});
     const limit = 1258895;
     var file = try std.fs.cwd().createFile("output.txt", .{});
-    const gpu = GPU.GPU.init(Interrupt.Interrupt.init());
+    var inter = Interrupt.Interrupt.init();
+    const gpu = GPU.GPU.init(&inter);
     _ = gpu;
     var lcd = LCD.LCD.init();
     _ = lcd.read_byte(0xFF40);
@@ -35,11 +41,13 @@ pub fn main() !void {
     var stat = Stat.Stat.init();
     _ = stat.read_byte(0xFF41);
     stat.write_byte(0xFF41, 0b11110000);
-    var inter = Interrupt.Interrupt.init();
     var keypad = Controller.KeyPad.init(&inter);
     keypad.press(Controller.Key.A);
     keypad.write_byte(0xFF00, 64);
     _ = keypad.read_byte(0xFF00);
+    var serial = Serial.init(&inter, callback);
+    _ = serial.read_byte(0xFF01);
+    serial.write_byte(0xFF02, 0x81);
     defer file.close();
     for (0..limit) |_| {
         //Format: [registers] (mem[pc] mem[pc+1] mem[pc+2] mem[pc+3])
