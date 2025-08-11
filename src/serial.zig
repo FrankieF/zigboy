@@ -1,5 +1,7 @@
 const Interrupt = @import("interrupt.zig");
 
+pub fn empty_callback(_: u8) void {}
+
 pub const Serial = struct {
     data: u8,
     control: u8,

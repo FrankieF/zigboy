@@ -26,28 +26,6 @@ pub fn main() !void {
     // std.debug.print("Title {c}", .{c.title});
     const limit = 1258895;
     var file = try std.fs.cwd().createFile("output.txt", .{});
-    var inter = Interrupt.Interrupt.init();
-    const gpu = GPU.GPU.init(&inter);
-    _ = gpu;
-    var lcd = LCD.LCD.init();
-    _ = lcd.read_byte(0xFF40);
-    lcd.write_bye(0xFF40, 1);
-    var palette = Palette.Palette.init();
-    _ = palette.get_shade(0);
-    _ = palette.read_byte();
-    palette.set_colors(.{ 0, 0, 0, 0 });
-    palette.update();
-    palette.write_byte(1);
-    var stat = Stat.Stat.init();
-    _ = stat.read_byte(0xFF41);
-    stat.write_byte(0xFF41, 0b11110000);
-    var keypad = Controller.KeyPad.init(&inter);
-    keypad.press(Controller.Key.A);
-    keypad.write_byte(0xFF00, 64);
-    _ = keypad.read_byte(0xFF00);
-    var serial = Serial.init(&inter, callback);
-    _ = serial.read_byte(0xFF01);
-    serial.write_byte(0xFF02, 0x81);
     defer file.close();
     for (0..limit) |_| {
         //Format: [registers] (mem[pc] mem[pc+1] mem[pc+2] mem[pc+3])

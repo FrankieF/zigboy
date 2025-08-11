@@ -4,6 +4,7 @@ const Timer = @import("timer.zig").Timer;
 const Interrupt = @import("interrupt.zig").Interrupt;
 const GPU = @import("gpu.zig").GPU;
 const Controller = @import("controller.zig");
+const Serial = @import("serial.zig");
 
 const HIGH_RAM_LENGTH = 127;
 const WORK_RAM_LENGTH = 8192;
@@ -17,6 +18,7 @@ pub const Memory = struct {
     interrupt: *Interrupt,
     gpu: GPU,
     keypad: Controller.KeyPad,
+    serial: Serial.Serial,
 
     pub fn init(catridge: Catridge) Memory {
         const high_ram = [_]u8{0} ** HIGH_RAM_LENGTH;
@@ -31,6 +33,7 @@ pub const Memory = struct {
             .interrupt = &interrupt,
             .gpu = GPU.init(&interrupt),
             .keypad = Controller.KeyPad.init(&interrupt),
+            .serial = Serial.Serial.init(&interrupt, Serial.empty_callback),
         };
         memory.initialiseMemory();
         return memory;

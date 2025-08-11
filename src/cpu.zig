@@ -104,9 +104,9 @@ pub const CPU = struct {
     }
 
     pub fn pop_stack(self: *CPU) u16 {
-        std.debug.print("\nSP is : {X}", .{self.sp});
+        // std.debug.print("\nSP is : {X}", .{self.sp});
         const value = self.memory.read_word(self.sp);
-        std.debug.print("\nWord is : {X}", .{value});
+        // std.debug.print("\nWord is : {X}", .{value});
         self.sp += 2;
         return value;
     }
