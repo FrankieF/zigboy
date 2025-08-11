@@ -16,7 +16,7 @@ pub const Interrupt = struct {
     }
 
     pub fn set_interrupt(self: *Interrupt, source: InterruptSource) void {
-        self.value |= @as(u8, source);
+        self.value |= @intFromEnum(source);
     }
 
     pub fn read_byte(self: *Interrupt, address: u16) u8 {
