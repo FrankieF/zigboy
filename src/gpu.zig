@@ -312,6 +312,34 @@ pub const GPU = struct {
         self.pixels[start + 3] = rgba[3];
     }
 
+    pub fn set_colors(self: *GPU, colors: [4]u32) void {
+        const previous_colors = self.background_palette.colors;
+        const previous_line_y = self.line_y;
+        for (0..SCREEN_HEIGHT) |y| {
+            self.line_y = @as(u8, y);
+            for (0..SCREEN_WIDTH) |x| {
+                const index = y * 166 + x;
+                switch (self.pixels[index]) {
+                    previous_colors[0] => self.set_pixel(x, colors[0]),
+                    previous_colors[1] => self.set_pixel(x, colors[1]),
+                    previous_colors[2] => self.set_pixel(x, colors[2]),
+                    previous_colors[3] => self.set_pixel(x, colors[3]),
+                    _ => unreachable,
+                }
+            }
+        }
+        self.line_y = previous_line_y;
+        self.background_palette.set_colors(colors);
+        self.sprite_patlette_0.set_colors(colors);
+        self.sprite_patlette_1.set_colors(colors);
+    }
+
+    pub fn take_updated(self: *GPU) bool {
+        const updated = self.updated;
+        self.updated = false;
+        return updated;
+    }
+
     fn get_address(base: u16, x: u8, y: u8) u16 {
         const y_16 = @as(u16, y) / 8 * 32;
         const x_16 = @as(u16, x) / 8;
