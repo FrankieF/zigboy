@@ -99,7 +99,7 @@ pub const GPU = struct {
         }
     }
 
-    pub fn write_bye(self: *GPU, address: u16, value: u8) void {
+    pub fn write_byte(self: *GPU, address: u16, value: u8) void {
         switch (address) {
             0x8000...0x9FFF => self.vram[address - 0x8000] = value,
             0xFE00...0xFE9F => self.oam[address - 0xFE00] = value,
