@@ -104,16 +104,14 @@ pub const CPU = struct {
     }
 
     pub fn pop_stack(self: *CPU) u16 {
-        // std.debug.print("\nSP is : {X}", .{self.sp});
         const value = self.memory.read_word(self.sp);
-        // std.debug.print("\nWord is : {X}", .{value});
         self.sp += 2;
         return value;
     }
 
     pub fn push_stack(self: *CPU, value: u16) void {
         self.sp -= 2;
-        self.memory.write_word(self.pc, value);
+        self.memory.write_word(self.sp, value);
     }
 
     pub fn next_byte(self: *CPU) u8 {
@@ -319,7 +317,10 @@ pub const CPU = struct {
         return cycles;
     }
 
+    var tick_count: u64 = 0;
+
     pub fn tick(self: *CPU) u32 {
+        tick_count += 1;
         self.update_interrupts();
         const interrupt_cycles = self.check_interrupts();
         if (interrupt_cycles != 0) {
@@ -330,6 +331,7 @@ pub const CPU = struct {
             return 4;
         }
         const opcode = self.next_byte();
+        std.debug.print("\n{d}. Current instruction: {X}", .{ tick_count, opcode });
         return self.execute(opcode);
     }
 
@@ -1440,11 +1442,20 @@ pub const CPU = struct {
             },
             0xF1 => { // POP AF
                 const value = self.pop_stack();
+                var f: u8 = 0;
+                const b = @import("bit.zig");
+                if (self.flags.zero) f |= b.set(f, 7);
+                if (self.flags.subtract) f |= b.set(f, 6);
+                if (self.flags.half_carry) f |= b.set(f, 5);
+                if (self.flags.carry) f |= b.set(f, 4);
+                std.debug.print("\n popped {X} off stack. A:{X}, F: {X}", .{ value, self.registers.a, f });
                 self.registers.a = @truncate(value >> 8);
-                self.flags.zero = value & 0x80 != 0;
-                self.flags.subtract = value & 0x40 != 0;
-                self.flags.half_carry = value & 0x20 != 0;
-                self.flags.carry = value & 0x10 != 0;
+                self.flags.zero = value & 0x8 != 0;
+                self.flags.subtract = value & 0x4 != 0;
+                self.flags.half_carry = value & 0x2 != 0;
+                self.flags.carry = value & 0x1 != 0;
+                const fl = self.flags;
+                std.debug.print("\n After A:{X}, Z: {any}, S: {any}, HC: {any}, C: {any}", .{ self.registers.a, fl.zero, fl.subtract, fl.half_carry, fl.carry });
                 return 12;
             },
             0xF2 => { // LDH A, [C]
@@ -1457,19 +1468,29 @@ pub const CPU = struct {
                 return 4;
             },
             0xF5 => { // PUSH AF
-                var af = @as(u16, self.registers.a);
+                const a = self.registers.a;
+                var f: u8 = 0;
+                const b = @import("bit.zig");
+                if (self.flags.zero) f |= b.set(f, 7);
+                if (self.flags.subtract) f |= b.set(f, 6);
+                if (self.flags.half_carry) f |= b.set(f, 5);
+                if (self.flags.carry) f |= b.set(f, 4);
+                std.debug.print("\nA: {X}, F: {X}", .{ a, f });
+                var af = @as(u16, self.registers.a) << 8;
+                std.debug.print("\nAF: {X}", .{af});
                 if (self.flags.zero) {
-                    af |= 0x80;
+                    af |= 0x8;
                 }
                 if (self.flags.subtract) {
-                    af |= 0x40;
+                    af |= 0x4;
                 }
                 if (self.flags.half_carry) {
-                    af |= 0x20;
+                    af |= 0x2;
                 }
                 if (self.flags.carry) {
-                    af |= 0x10;
+                    af |= 0x1;
                 }
+                std.debug.print("\nPushing onto stack: {X}", .{af});
                 self.push_stack(af);
                 return 16;
             },
