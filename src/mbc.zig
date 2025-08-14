@@ -74,9 +74,6 @@ pub const MBC1 = struct {
             0x0000...0x3FFF => return self.rom[address],
             0x4000...0x7FFF => {
                 const offset = 0x4000 * @as(usize, self.rom_bank);
-                if (address == 0x4244) {
-                    //std.debug.print("\nRom Value: {X}", .{self.rom});
-                }
                 return self.rom[offset + (address - 0x4000)];
             },
             0xA000...0xBFFF => {
