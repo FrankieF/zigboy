@@ -16,3 +16,11 @@ zig-out/
 /build/
 /build-*/
 /docgen_tmp/
+/.vscode
+/.vs
+*.exe
+*.obj
+*.pdb
+output.txt
+output.txt
+/test_roms
